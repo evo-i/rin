@@ -22,6 +22,7 @@
 #define RIN_TRANSLATION_METADATA_H 1
 
 #include <glib-object.h>
+#include "rin-exports.h"
 
 G_BEGIN_DECLS
 
@@ -47,6 +48,7 @@ G_DECLARE_FINAL_TYPE(RinTranslationMetadata, rin_translation_metadata, RIN, TRAN
  *
  * Returns: (transfer full): a newly-allocated #RinTranslationMetadata
  */
+RIN_API
 RinTranslationMetadata *
 rin_translation_metadata_new(const gchar *language,
                           const gchar *author,
@@ -58,6 +60,7 @@ rin_translation_metadata_new(const gchar *language,
  *
  * Returns: (transfer none) (nullable): language string owned by @self
  */
+RIN_API
 const gchar *
 rin_translation_metadata_get_language(RinTranslationMetadata *self);
 
@@ -67,6 +70,7 @@ rin_translation_metadata_get_language(RinTranslationMetadata *self);
  *
  * Returns: (transfer none) (nullable): author string owned by @self
  */
+RIN_API
 const gchar *
 rin_translation_metadata_get_author(RinTranslationMetadata *self);
 
@@ -76,6 +80,7 @@ rin_translation_metadata_get_author(RinTranslationMetadata *self);
  *
  * Returns: (transfer none) (nullable): version string owned by @self
  */
+RIN_API
 const gchar *
 rin_translation_metadata_get_version(RinTranslationMetadata *self);
 

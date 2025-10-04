@@ -24,6 +24,7 @@
 #include <glib.h>
 #include <glib-object.h>
 
+#include "rin-exports.h"
 #include "rin-metadata.h"
 #include "rin-settings.h"
 #include "rin-info.h"
@@ -53,6 +54,7 @@ G_DECLARE_FINAL_TYPE(RinProject, rin_project, RIN, PROJECT, GObject)
  *
  * Returns: (transfer full): a newly-allocated #RinProject
  */
+RIN_API
 RinProject *
 rin_project_new(gchar const *game_root_dir, GError **error);
 
@@ -65,6 +67,7 @@ rin_project_new(gchar const *game_root_dir, GError **error);
  *
  * Returns: (transfer full): a newly-allocated #RinProject
  */
+RIN_API
 RinProject *
 rin_project_new_empty(GError **error);
 
@@ -78,6 +81,7 @@ rin_project_new_empty(GError **error);
  *
  * Returns: (transfer full) (nullable): a newly-allocated #RinProject or %NULL on error
  */
+RIN_API
 RinProject *
 rin_project_open(gchar const *path, GError **error);
 
@@ -92,6 +96,7 @@ rin_project_open(gchar const *path, GError **error);
  *
  * Returns: (transfer none): the #RinMetadata owned by @self
  */
+RIN_API
 RinMetadata *
 rin_project_get_metadata(RinProject *self);
 
@@ -101,6 +106,7 @@ rin_project_get_metadata(RinProject *self);
  *
  * Returns: (transfer none): the #RinSettings owned by @self
  */
+RIN_API
 RinSettings *
 rin_project_get_settings(RinProject *self);
 
@@ -110,6 +116,7 @@ rin_project_get_settings(RinProject *self);
  *
  * Returns: (transfer none): the #RinInfo owned by @self
  */
+RIN_API
 RinInfo *
 rin_project_get_info(RinProject *self);
 
@@ -119,6 +126,7 @@ rin_project_get_info(RinProject *self);
  *
  * Returns: (transfer none): the #RinStats owned by @self
  */
+RIN_API
 RinStats *
 rin_project_get_stats(RinProject *self);
 
@@ -129,6 +137,7 @@ rin_project_get_stats(RinProject *self);
  * Returns: (transfer none) (element-type utf8): a #GPtrArray of UTF-8
  * strings (file paths) owned by @self
  */
+RIN_API
 GPtrArray *
 rin_project_get_archives(RinProject *self);
 
@@ -138,6 +147,7 @@ rin_project_get_archives(RinProject *self);
  *
  * Returns: (transfer none) (nullable): the project path owned by @self
  */
+RIN_API
 gchar const *
 rin_project_get_path(RinProject *self);
 
@@ -147,6 +157,7 @@ rin_project_get_path(RinProject *self);
  *
  * Convenience wrapper for g_object_unref() on #RinProject instances.
  */
+RIN_API
 void
 rin_project_unref(RinProject *self);
 

@@ -22,6 +22,7 @@
 #define RIN_INFO_H 1
 
 #include <glib-object.h>
+#include "rin-exports.h"
 
 G_BEGIN_DECLS
 
@@ -36,6 +37,7 @@ G_DECLARE_FINAL_TYPE(RinInfo, rin_info, RIN, INFO, GObject)
  *
  * Returns: (transfer full): a newly-allocated #RinInfo
  */
+RIN_API
 RinInfo *
 rin_info_new(void);
 
@@ -45,6 +47,7 @@ rin_info_new(void);
  *
  * Convenience wrapper for g_object_unref().
  */
+RIN_API
 void
 rin_info_unref(RinInfo *self);
 
@@ -54,6 +57,7 @@ rin_info_unref(RinInfo *self);
  *
  * Returns: (transfer none) (nullable): the name string owned by @self
  */
+RIN_API
 gchar const *
 rin_info_get_name(RinInfo *self);
 
@@ -63,6 +67,7 @@ rin_info_get_name(RinInfo *self);
  *
  * Returns: the version number stored in @self
  */
+RIN_API
 guint32
 rin_info_get_version(RinInfo *self);
 
@@ -72,6 +77,7 @@ rin_info_get_version(RinInfo *self);
  *
  * Returns: the minimum supported version
  */
+RIN_API
 guint32
 rin_info_get_minimum_version(RinInfo *self);
 
@@ -81,6 +87,7 @@ rin_info_get_minimum_version(RinInfo *self);
  *
  * Returns: (transfer none) (nullable): language string owned by @self
  */
+RIN_API
 gchar const *
 rin_info_get_language(RinInfo *self);
 
@@ -89,6 +96,7 @@ rin_info_get_language(RinInfo *self);
  * @self: a #RinInfo
  * @name: (nullable): name to set; copied by the setter
  */
+RIN_API
 void
 rin_info_set_name(RinInfo *self, gchar const *name);
 
@@ -97,6 +105,7 @@ rin_info_set_name(RinInfo *self, gchar const *name);
  * @self: a #RinInfo
  * @version: version to set
  */
+RIN_API
 void
 rin_info_set_version(RinInfo *self, guint32 version);
 
@@ -105,6 +114,7 @@ rin_info_set_version(RinInfo *self, guint32 version);
  * @self: a #RinInfo
  * @min_version: minimum version to set
  */
+RIN_API
 void
 rin_info_set_minimum_version(RinInfo *self, guint32 min_version);
 
@@ -113,6 +123,7 @@ rin_info_set_minimum_version(RinInfo *self, guint32 min_version);
  * @self: a #RinInfo
  * @language: (nullable): language string; copied by the setter
  */
+RIN_API
 void
 rin_info_set_language(RinInfo *self, gchar const *language);
 

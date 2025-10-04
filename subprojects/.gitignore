@@ -1,0 +1,4 @@
+*
+!.gitignore
+!glib.wrap
+!libxml2.wrap

@@ -22,6 +22,7 @@
  */
 
 #include <glib-object.h>
+#include "rin-exports.h"
 
 G_BEGIN_DECLS
 
@@ -36,6 +37,7 @@ G_DECLARE_FINAL_TYPE(RinArchive, rin_archive, RIN, ARCHIVE, GObject)
  *
  * Returns: (transfer full): a newly-allocated #RinArchive
  */
+RIN_API
 RinArchive *
 rin_archive_new(void);
 
@@ -45,6 +47,7 @@ rin_archive_new(void);
  *
  * Returns: (transfer none) (nullable): path string owned by @self
  */
+RIN_API
 gchar const *
 rin_archive_get_path(RinArchive *self);
 
@@ -54,6 +57,7 @@ rin_archive_get_path(RinArchive *self);
  *
  * Returns: (transfer none) (element-type utf8): a #GList of UTF-8 file paths owned by @self
  */
+RIN_API
 GList *
 rin_archive_get_files(RinArchive *self);
 
@@ -62,6 +66,7 @@ rin_archive_get_files(RinArchive *self);
  * @self: a #RinArchive
  * @path: (nullable): path string copied by setter
  */
+RIN_API
 void
 rin_archive_set_path(RinArchive *self, gchar const *path);
 
@@ -71,6 +76,7 @@ rin_archive_set_path(RinArchive *self, gchar const *path);
  *
  * Convenience wrapper for g_object_unref().
  */
+RIN_API
 void
 rin_archive_unref(RinArchive *self);
 

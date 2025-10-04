@@ -23,6 +23,8 @@
 
 #include <glib-object.h>
 
+#include "rin-exports.h"
+
 G_BEGIN_DECLS
 
 #if !defined(RIN_INSIDE) && !defined(RIN_COMPILATION)
@@ -37,6 +39,7 @@ G_DECLARE_FINAL_TYPE(RinText, rin_text, RIN, TEXT, GObject)
  *
  * Returns: (transfer full): a newly-allocated #RinText
  */
+RIN_API
 RinText *
 rin_text_new(const gchar *text);
 
@@ -46,6 +49,7 @@ rin_text_new(const gchar *text);
  *
  * Convenience wrapper for g_object_unref().
  */
+RIN_API
 void
 rin_text_unref(RinText *self);
 
@@ -55,6 +59,7 @@ rin_text_unref(RinText *self);
  *
  * Returns: (transfer none) (nullable): original text owned by @self
  */
+RIN_API
 gchar const *
 rin_text_get_original(RinText *self);
 
@@ -64,6 +69,7 @@ rin_text_get_original(RinText *self);
  *
  * Returns: (transfer none) (nullable): current text value owned by @self
  */
+RIN_API
 gchar const *
 rin_text_get_value(RinText *self);
 
@@ -73,6 +79,7 @@ rin_text_get_value(RinText *self);
  *
  * Returns: length of the original text
  */
+RIN_API
 gsize
 rin_text_get_original_length(RinText *self);
 
@@ -82,6 +89,7 @@ rin_text_get_original_length(RinText *self);
  *
  * Returns: length of the current text value
  */
+RIN_API
 gsize
 rin_text_get_value_length(RinText *self);
 
@@ -91,6 +99,7 @@ rin_text_get_value_length(RinText *self);
  *
  * Returns: numeric id
  */
+RIN_API
 gulong
 rin_text_get_id(RinText *self);
 
@@ -100,6 +109,7 @@ rin_text_get_id(RinText *self);
  *
  * Returns: status flags
  */
+RIN_API
 guint32
 rin_text_get_status(RinText *self);
 
@@ -109,6 +119,7 @@ rin_text_get_status(RinText *self);
  *
  * Returns: (transfer none) (nullable): language string owned by @self
  */
+RIN_API
 gchar const *
 rin_text_get_language(RinText *self);
 
@@ -117,6 +128,7 @@ rin_text_get_language(RinText *self);
  * @self: a #RinText
  * @text: (nullable): text copied by setter
  */
+RIN_API
 void
 rin_text_set_original(RinText *self, const gchar *text);
 
@@ -125,6 +137,7 @@ rin_text_set_original(RinText *self, const gchar *text);
  * @self: a #RinText
  * @text: (nullable): text copied by setter
  */
+RIN_API
 void
 rin_text_set_value(RinText *self, const gchar *text);
 
@@ -133,6 +146,7 @@ rin_text_set_value(RinText *self, const gchar *text);
  * @self: a #RinText
  * @id: id to set
  */
+RIN_API
 void
 rin_text_set_id(RinText *self, gulong id);
 
@@ -141,6 +155,7 @@ rin_text_set_id(RinText *self, gulong id);
  * @self: a #RinText
  * @status: status flags to set
  */
+RIN_API
 void
 rin_text_set_status(RinText *self, guint32 status);
 
@@ -149,6 +164,7 @@ rin_text_set_status(RinText *self, guint32 status);
  * @self: a #RinText
  * @language: (nullable): language string copied by setter
  */
+RIN_API
 void
 rin_text_set_language(RinText *self, const gchar *language);
 

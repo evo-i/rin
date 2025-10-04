@@ -23,6 +23,7 @@
 
 #include <glib-object.h>
 #include "rin-translation-metadata.h"
+#include "rin-exports.h"
 
 G_BEGIN_DECLS
 
@@ -38,6 +39,7 @@ G_DECLARE_FINAL_TYPE(RinTranslation, rin_translation, RIN, TRANSLATION, GObject)
  *
  * Returns: (transfer full): a newly-allocated #RinTranslation
  */
+RIN_API
 RinTranslation *
 rin_translation_new(void);
 
@@ -47,6 +49,7 @@ rin_translation_new(void);
  *
  * Returns: (transfer none): the #RinTranslationMetadata owned by @self
  */
+RIN_API
 RinTranslationMetadata *
 rin_translation_get_metadata(RinTranslation *self);
 
@@ -56,6 +59,7 @@ rin_translation_get_metadata(RinTranslation *self);
  *
  * Returns: (transfer none) (element-type utf8): a #GList of strings owned by @self
  */
+RIN_API
 GList *
 rin_translation_get_strings(RinTranslation *self);
 
@@ -65,6 +69,7 @@ rin_translation_get_strings(RinTranslation *self);
  *
  * Convenience wrapper for g_object_unref().
  */
+RIN_API
 void
 rin_translation_unref(RinTranslation *self);
 

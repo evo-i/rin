@@ -24,6 +24,8 @@
 #include <glib.h>
 #include <glib-object.h>
 
+#include "rin-exports.h"
+
 G_BEGIN_DECLS
 
 #if !defined(RIN_INSIDE) && !defined(RIN_COMPILATION)
@@ -55,6 +57,7 @@ struct _RinSettingsClass {
  *
  * Returns: (transfer full): a newly-allocated #RinSettings
  */
+RIN_API
 RinSettings *
 rin_settings_new(void);
 
@@ -64,6 +67,7 @@ rin_settings_new(void);
  *
  * Returns: (transfer none) (nullable): the source language string owned by @self
  */
+RIN_API
 gchar const *
 rin_settings_get_source_language(RinSettings *self);
 
@@ -73,6 +77,7 @@ rin_settings_get_source_language(RinSettings *self);
  *
  * Returns: (transfer none) (nullable): the target language string owned by @self
  */
+RIN_API
 gchar const *
 rin_settings_get_target_language(RinSettings *self);
 
@@ -82,6 +87,7 @@ rin_settings_get_target_language(RinSettings *self);
  *
  * Returns: (transfer none) (nullable): the encoding string owned by @self
  */
+RIN_API
 gchar const *
 rin_settings_get_encoding(RinSettings *self);
 
@@ -91,6 +97,7 @@ rin_settings_get_encoding(RinSettings *self);
  *
  * Returns: maximum allowed text length
  */
+RIN_API
 gsize
 rin_settings_get_max_text_length(RinSettings *self);
 
@@ -99,6 +106,7 @@ rin_settings_get_max_text_length(RinSettings *self);
  * @self: a #RinSettings
  * @language: (nullable): language string copied by setter
  */
+RIN_API
 void
 rin_settings_set_source_language(RinSettings *self, gchar const *language);
 
@@ -107,6 +115,7 @@ rin_settings_set_source_language(RinSettings *self, gchar const *language);
  * @self: a #RinSettings
  * @language: (nullable): language string copied by setter
  */
+RIN_API
 void
 rin_settings_set_target_language(RinSettings *self, gchar const *language);
 
@@ -115,6 +124,7 @@ rin_settings_set_target_language(RinSettings *self, gchar const *language);
  * @self: a #RinSettings
  * @encoding: (nullable): encoding string copied by setter
  */
+RIN_API
 void
 rin_settings_set_encoding(RinSettings *self, gchar const *encoding);
 
@@ -123,6 +133,7 @@ rin_settings_set_encoding(RinSettings *self, gchar const *encoding);
  * @self: a #RinSettings
  * @max_length: maximum allowed text length
  */
+RIN_API
 void
 rin_settings_set_max_text_length(RinSettings *self, gsize max_length);
 
@@ -132,6 +143,7 @@ rin_settings_set_max_text_length(RinSettings *self, gsize max_length);
  *
  * Convenience wrapper for g_object_unref().
  */
+RIN_API
 void
 rin_settings_unref(RinSettings *self);
 

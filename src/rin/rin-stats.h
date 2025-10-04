@@ -24,6 +24,8 @@
 #include <glib.h>
 #include <glib-object.h>
 
+#include "rin-exports.h"
+
 G_BEGIN_DECLS
 
 #if !defined(RIN_INSIDE) && !defined(RIN_COMPILATION)
@@ -37,6 +39,7 @@ G_DECLARE_FINAL_TYPE(RinStats, rin_stats, RIN, STATS, GObject)
  *
  * Returns: (transfer full): a newly-allocated #RinStats
  */
+RIN_API
 RinStats *
 rin_stats_new(void);
 
@@ -46,6 +49,7 @@ rin_stats_new(void);
  *
  * Convenience wrapper for g_object_unref().
  */
+RIN_API
 void
 rin_stats_unref(RinStats *self);
 
@@ -55,6 +59,7 @@ rin_stats_unref(RinStats *self);
  *
  * Returns: total number of strings
  */
+RIN_API
 gulong
 rin_stats_get_total_strings(RinStats *self);
 
@@ -64,6 +69,7 @@ rin_stats_get_total_strings(RinStats *self);
  *
  * Returns: number of translated strings
  */
+RIN_API
 gulong
 rin_stats_get_translated_strings(RinStats *self);
 
@@ -73,6 +79,7 @@ rin_stats_get_translated_strings(RinStats *self);
  *
  * Returns: number of reviewed strings
  */
+RIN_API
 gulong
 rin_stats_get_reviewed_strings(RinStats *self);
 
@@ -82,6 +89,7 @@ rin_stats_get_reviewed_strings(RinStats *self);
  *
  * Returns: number of proofread strings
  */
+RIN_API
 gulong
 rin_stats_get_proofread_strings(RinStats *self);
 

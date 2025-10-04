@@ -22,6 +22,7 @@
 #define RIN_METADATA_H 1
 
 #include <glib-object.h>
+#include "rin-exports.h"
 
 G_BEGIN_DECLS
 
@@ -37,6 +38,7 @@ G_DECLARE_FINAL_TYPE(RinMetadata, rin_metadata, RIN, METADATA, GObject)
  *
  * Create a new #RinMetadata instance.
  */
+RIN_API
 RinMetadata *
 rin_metadata_new(void);
 
@@ -46,6 +48,7 @@ rin_metadata_new(void);
  *
  * Convenience wrapper for g_object_unref().
  */
+RIN_API
 void
 rin_metadata_unref(RinMetadata *self);
 
@@ -55,6 +58,7 @@ rin_metadata_unref(RinMetadata *self);
  *
  * Returns: (transfer none) (nullable): the name string owned by @self
  */
+RIN_API
 gchar const *
 rin_metadata_get_name(RinMetadata *self);
 
@@ -64,6 +68,7 @@ rin_metadata_get_name(RinMetadata *self);
  *
  * Returns: (transfer none) (nullable): the description string owned by @self
  */
+RIN_API
 gchar const *
 rin_metadata_get_description(RinMetadata *self);
 
@@ -73,6 +78,7 @@ rin_metadata_get_description(RinMetadata *self);
  *
  * Returns: (transfer none) (nullable): the author string owned by @self
  */
+RIN_API
 gchar const *
 rin_metadata_get_author(RinMetadata *self);
 
@@ -82,6 +88,7 @@ rin_metadata_get_author(RinMetadata *self);
  *
  * Returns: the stored version number
  */
+RIN_API
 guint32
 rin_metadata_get_version(RinMetadata *self);
 
@@ -92,6 +99,7 @@ rin_metadata_get_version(RinMetadata *self);
  * Returns: (transfer none) (nullable): a #GDateTime representing creation time
  * owned by @self
  */
+RIN_API
 GDateTime *
 rin_metadata_get_created(RinMetadata *self);
 
@@ -102,6 +110,7 @@ rin_metadata_get_created(RinMetadata *self);
  * Returns: (transfer none) (nullable): a #GDateTime representing last-modified
  * time owned by @self
  */
+RIN_API
 GDateTime *
 rin_metadata_get_modified(RinMetadata *self);
 
@@ -110,6 +119,7 @@ rin_metadata_get_modified(RinMetadata *self);
  * @self: a #RinMetadata
  * @name: (nullable): name to set; copied by the setter
  */
+RIN_API
 void
 rin_metadata_set_name(RinMetadata *self, gchar const *name);
 
@@ -118,6 +128,7 @@ rin_metadata_set_name(RinMetadata *self, gchar const *name);
  * @self: a #RinMetadata
  * @description: (nullable): description to set; copied by the setter
  */
+RIN_API
 void
 rin_metadata_set_description(RinMetadata *self, gchar const *description);
 
@@ -126,6 +137,7 @@ rin_metadata_set_description(RinMetadata *self, gchar const *description);
  * @self: a #RinMetadata
  * @author: (nullable): author to set; copied by the setter
  */
+RIN_API
 void
 rin_metadata_set_author(RinMetadata *self, gchar const *author);
 
@@ -134,6 +146,7 @@ rin_metadata_set_author(RinMetadata *self, gchar const *author);
  * @self: a #RinMetadata
  * @version: version to set
  */
+RIN_API
 void
 rin_metadata_set_version(RinMetadata *self, guint32 version);
 
@@ -142,6 +155,7 @@ rin_metadata_set_version(RinMetadata *self, guint32 version);
  * @self: a #RinMetadata
  * @created: (nullable) (transfer none): a #GDateTime; the setter makes an internal copy
  */
+RIN_API
 void
 rin_metadata_set_created(RinMetadata *self, GDateTime *created);
 
@@ -150,6 +164,7 @@ rin_metadata_set_created(RinMetadata *self, GDateTime *created);
  * @self: a #RinMetadata
  * @modified: (nullable) (transfer none): a #GDateTime; the setter makes an internal copy
  */
+RIN_API
 void
 rin_metadata_set_modified(RinMetadata *self, GDateTime *modified);
 
