@@ -21,6 +21,7 @@
 #ifndef RIN_METADATA_H
 #define RIN_METADATA_H 1
 
+#include <glib.h>
 #include <glib-object.h>
 #include "rin-exports.h"
 
@@ -31,7 +32,10 @@ G_BEGIN_DECLS
 #endif
 
 #define RIN_TYPE_METADATA (rin_metadata_get_type())
+
+RIN_API
 G_DECLARE_FINAL_TYPE(RinMetadata, rin_metadata, RIN, METADATA, GObject)
+
 /**
  * rin_metadata_new:
  * @returns: (transfer full): a newly-allocated #RinMetadata

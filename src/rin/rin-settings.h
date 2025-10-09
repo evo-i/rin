@@ -33,6 +33,8 @@ G_BEGIN_DECLS
 #endif
 
 #define RIN_TYPE_SETTINGS (rin_settings_get_type())
+
+RIN_API
 G_DECLARE_DERIVABLE_TYPE(RinSettings, rin_settings, RIN, SETTINGS, GObject)
 
 struct _RinSettingsClass {

@@ -22,8 +22,8 @@
 #endif
 
 #if defined(RIN_PLATFORM_WINDOWS)
-  #ifdef RIN_SHARED_BUILD
-    #ifdef RIN_EXPORTS
+  #if defined(RIN_SHARED_BUILD) || defined(RIN_PLUGIN)
+    #if defined(RIN_EXPORTS) || defined(RIN_PLUGIN)
       #define RIN_API __declspec(dllexport)
     #else
       #define RIN_API __declspec(dllimport)

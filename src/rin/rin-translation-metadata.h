@@ -32,6 +32,7 @@ G_BEGIN_DECLS
 
 #define RIN_TYPE_TRANSLATION_METADATA (rin_translation_metadata_get_type())
 
+RIN_API
 G_DECLARE_FINAL_TYPE(RinTranslationMetadata, rin_translation_metadata, RIN, TRANSLATION_METADATA, GObject)
 
 /**

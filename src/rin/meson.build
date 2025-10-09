@@ -1,3 +1,5 @@
+rin_api_version = '1.0'
+
 rin_sources = [
   'rin.c',
   'rin-project.c',
@@ -39,13 +41,8 @@ version_conf.set('PROJECT_NAME', meson.project_name())
 version_conf.set('COMPANY', 'evo')
 version_conf.set('DESCRIPTION', 'rin library for project management of vizar project.')
 version_conf.set('COPYRIGHT', 'Copyright © 2025 rin')
+version_conf.set('TARGET_NAME', 'rin.dll')
 version_conf.set('PRODUCT', 'rin')
-
-if get_option('default_library') == 'shared'
-  version_conf.set('TARGET_NAME', meson.project_name())
-else
-  version_conf.set('TARGET_NAME', meson.project_name() + 'lib')
-endif
 
 if host_machine.system() == 'windows'
   conf_file = configure_file(
@@ -117,3 +114,5 @@ if gir_dep.found()
                 install: true,
   )
 endif
+
+subdir('plugins')

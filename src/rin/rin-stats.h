@@ -33,6 +33,8 @@ G_BEGIN_DECLS
 #endif
 
 #define RIN_TYPE_STATS (rin_stats_get_type())
+
+RIN_API
 G_DECLARE_FINAL_TYPE(RinStats, rin_stats, RIN, STATS, GObject)
 /**
  * rin_stats_new:

@@ -31,6 +31,8 @@ G_BEGIN_DECLS
 #endif
 
 #define RIN_TYPE_ARCHIVE (rin_archive_get_type())
+
+RIN_API
 G_DECLARE_FINAL_TYPE(RinArchive, rin_archive, RIN, ARCHIVE, GObject)
 /**
  * rin_archive_new:

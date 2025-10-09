@@ -2,13 +2,19 @@
 #define RIN_PROBE_H 1
 
 #include <glib-object.h>
+
+#define RIN_INSIDE
+
 #include "rin-project.h"
 #include "rin-exports.h"
+
+#undef RIN_INSIDE
 
 G_BEGIN_DECLS
 
 #define RIN_TYPE_PROBE (rin_probe_get_type())
 
+RIN_API
 G_DECLARE_INTERFACE(RinProbe, rin_probe, RIN, PROBE, GObject)
 
 struct _RinProbeInterface {

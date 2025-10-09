@@ -33,6 +33,7 @@ G_BEGIN_DECLS
 
 #define RIN_TYPE_TRANSLATION (rin_translation_get_type())
 
+RIN_API
 G_DECLARE_FINAL_TYPE(RinTranslation, rin_translation, RIN, TRANSLATION, GObject)
 /**
  * rin_translation_new:

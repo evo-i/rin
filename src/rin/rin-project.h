@@ -38,6 +38,7 @@ G_BEGIN_DECLS
 
 #define RIN_TYPE_PROJECT (rin_project_get_type())
 
+RIN_API
 G_DECLARE_FINAL_TYPE(RinProject, rin_project, RIN, PROJECT, GObject)
 
 /*

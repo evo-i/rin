@@ -32,6 +32,8 @@ G_BEGIN_DECLS
 #endif
 
 #define RIN_TYPE_TEXT (rin_text_get_type())
+
+RIN_API
 G_DECLARE_FINAL_TYPE(RinText, rin_text, RIN, TEXT, GObject)
 /**
  * rin_text_new:
