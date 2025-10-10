@@ -11,8 +11,7 @@ rin_sources = [
   'rin-translation.c',
   'rin-translation-metadata.c',
   'rin-text.c',
-  'rin-probe.c',
-  'rin-kit.c',
+  'rin-plugin.c',
 ]
 
 rin_headers = [
@@ -26,8 +25,7 @@ rin_headers = [
   'rin-translation.h',
   'rin-translation-metadata.h',
   'rin-text.h',
-  'rin-probe.h',
-  'rin-kit.h',
+  'rin-plugin.h',
 ]
 
 version_split = meson.project_version().split('.')
@@ -116,3 +114,12 @@ if gir_dep.found()
 endif
 
 subdir('plugins')
+
+test_app_sources = [
+  'tests/test-app.c'
+]
+
+executable('test-app',
+  test_app_sources,
+  dependencies: rin_deps + rin_dep)
+
