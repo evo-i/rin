@@ -77,7 +77,31 @@ struct _RinKitInterface {
   gpointer reserved4;
 };
 
-#define RIN_DECLARE_PLUGIN G_MODULE_EXPORT GTypeModule *rin_plugin_entry(void);
+#define RIN_DEFINE_PLUGIN(ModuleObjName, module_obj_name, MODULE, OBJ_NAME, ModuleName)   \
+G_MODULE_EXPORT GTypeModule *rin_plugin_entry(void);                                      \
+G_DECLARE_FINAL_TYPE(ModuleObjName, module_obj_name, MODULE, OBJ_NAME, RinPlugin)         \
+struct _##ModuleObjName {                                                                 \
+  struct _RinPlugin parent;                                                               \
+};                                                                                        \
+G_DEFINE_TYPE(ModuleObjName, module_obj_name, RIN_TYPE_PLUGIN)                            \
+static void module_obj_name##_class_init(ModuleObjName##Class *klass) {                   \
+  GTypeModuleClass *module_class = G_TYPE_MODULE_CLASS(klass);                            \
+  module_class->load = module_obj_name##_load;                                            \
+  module_class->unload = module_obj_name##_unload;                                        \
+}                                                                                         \
+static void module_obj_name##_init(ModuleObjName *self) {                                 \
+  (void) self;                                                                            \
+}                                                                                         \
+G_MODULE_EXPORT GTypeModule *rin_plugin_entry(void) {                                     \
+  static GTypeModule *module = NULL;                                                      \
+  if (module == NULL) {                                                                   \
+    module = g_object_new(module_obj_name##_get_type(), NULL);                            \
+    if (module) {                                                                         \
+      g_type_module_set_name(module, ModuleName);                                         \
+    }                                                                                     \
+  }                                                                                       \
+  return module;                                                                          \
+}                                                                                         \
 
 RIN_API
 RinProject *

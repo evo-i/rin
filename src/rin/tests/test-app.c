@@ -2,7 +2,7 @@
 
 #include "rin-plugin.h"
 
-#define RIN_MODULE_PATH "plugins/librin-plugin-soul-worker.dll"
+#define RIN_MODULE_PATH "plugins/librin-plugin-soul-worker.so"
 
 #define RIN_MODULE_NEW "rin_plugin_entry"
 
@@ -14,7 +14,9 @@ main(int argc, char *argv[]) {
   GTypeModule *module;
   rin_plugin_entry rin_new;
   GType req_type;
-  GObject *obj;
+  RinKit *obj;
+  guint count_types;
+  GType *types = NULL;
 
   g_module = g_module_open(RIN_MODULE_PATH, G_MODULE_BIND_LAZY);
 
@@ -24,11 +26,25 @@ main(int argc, char *argv[]) {
 
   g_type_module_use(module);
 
-  req_type = g_type_from_name("RinA");
+  types = g_type_children(G_TYPE_OBJECT, &count_types);
+  req_type = G_TYPE_INVALID;
 
-  obj = g_object_new(req_type, NULL);
+  for (guint i = 0; i < count_types; i++) {
+    if (g_type_is_a(types[i], RIN_TYPE_KIT)) {
+      gpointer type_ptr = g_type_get_plugin(types[i]);
+      if (type_ptr == module) {
+        req_type = types[i];
+        break;
+      }
+    }
+  }
 
-  gboolean state = g_type_is_a(req_type, RIN_TYPE_KIT);
+  obj = RIN_KIT(g_object_new(req_type, NULL));
+
+  rin_kit_save_project(obj, NULL, NULL);
+  rin_kit_load_project(obj, NULL, NULL);
+  rin_kit_create_project_from_path(obj, NULL);
+  rin_kit_make_patch(obj, NULL, NULL);
 
   g_object_unref(obj);
 

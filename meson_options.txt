@@ -1,0 +1,4 @@
+option('introspection', type : 'boolean', value : false, description : 'Enable GObject Introspection support')
+option('tests', type : 'boolean', value : false, description : 'Build tests')
+option('docs', type : 'boolean', value : false, description : 'Build documentation')
+option('examples', type : 'boolean', value : false, description : 'Build examples')
