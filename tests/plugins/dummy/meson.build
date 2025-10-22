@@ -22,6 +22,7 @@ dummy_plugin_test = executable('dummy_plugin_test',
 test('Rin dummy plugin test',
   dummy_plugin_test,
   depends: dummy_plugin,
+  args: [dummy_plugin.full_path()],
   env: {'RIN_PLUGIN_PATH': meson.current_build_dir() / '../plugins/dummy'}
 )
 
@@ -35,6 +36,7 @@ dummy_plugin_test_gmodule = executable('dummy_plugin_test_gmodule',
 
 test('Rin dummy plugin test (gmodule)',
   dummy_plugin_test_gmodule,
+  args: [dummy_plugin.full_path()],
   depends: dummy_plugin,
   env: {'RIN_PLUGIN_PATH': meson.current_build_dir() / '../plugins/dummy'}
 )
