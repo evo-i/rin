@@ -1,0 +1,1 @@
+#include "rin-registry.h"
