@@ -27,7 +27,7 @@ build_plugin_filename(void) {
 static gchar *
 try_open_from_dir(const char *dir) {
   gchar *filename = build_plugin_filename();
-  gchar *path = g_build_filename(dir, "plugins", "dummy", filename, NULL);
+  gchar *path = g_build_filename(dir, filename, NULL);
   g_free(filename);
 
   GModule *mod = g_module_open(path, G_MODULE_BIND_LOCAL);
