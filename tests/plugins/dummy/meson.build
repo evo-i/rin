@@ -1,11 +1,10 @@
 dummy_test_sources = [
-  'dummy_test.c',
+  'dummy_test_win32.c',
 ]
 
 dummy_test_gmodule_sources = [
   'dummy_test_gmodule.c',
 ]
-
 
 dummy_dependencies = [
   dependency('glib-2.0'),
@@ -19,13 +18,11 @@ dummy_plugin_test = executable('dummy_plugin_test',
   c_args: ['-DRIN_BUILD_PLUGIN_TEST'],
 )
 
-test('Rin dummy plugin test',
+test('Rin dummy plugin test (win32)',
   dummy_plugin_test,
   depends: dummy_plugin,
   args: [dummy_plugin.full_path()],
-  env: {'RIN_PLUGIN_PATH': meson.current_build_dir() / '../plugins/dummy'}
 )
-
 
 dummy_plugin_test_gmodule = executable('dummy_plugin_test_gmodule',
   dummy_test_gmodule_sources,
@@ -38,5 +35,4 @@ test('Rin dummy plugin test (gmodule)',
   dummy_plugin_test_gmodule,
   args: [dummy_plugin.full_path()],
   depends: dummy_plugin,
-  env: {'RIN_PLUGIN_PATH': meson.current_build_dir() / '../plugins/dummy'}
 )
