@@ -6,10 +6,11 @@
 #define DUMMY_UNUSED(x) (void)(x)
 #define DUMMY_TRUE (1)
 #define DUMMY_FALSE (0)
-#define DUMMY_LOG() fprintf(stderr, "Plugin call: %s\n", __func__)
+#define DUMMY_LOG() fprintf(stdout, "Plugin call: %s\n", __func__)
 
 struct dummy_context_s {
-  int dummy_field;
+  int i_dummy_field;
+  rin_plugin_callbacks_t *p_cbcs;
 };
 
 static
@@ -18,8 +19,11 @@ dummy_get_info(void);
 
 static
 void *
-dummy_create(void) {
-  return calloc(1, sizeof(struct dummy_context_s));
+dummy_create(rin_plugin_callbacks_t *p_cbcs) {
+  struct dummy_context_s *context
+    = calloc(1, sizeof(struct dummy_context_s));
+  context->p_cbcs = p_cbcs;
+  return context;
 }
 
 static
@@ -31,41 +35,79 @@ dummy_destroy(void *p_ctx) {
 }
 
 static
-int
+bool
 dummy_can_handle_file(void *p_ctx, char const *psz_path) {
+  struct dummy_context_s *ctx = p_ctx;
   DUMMY_LOG();
+  ctx
+    ->p_cbcs
+      ->report(ctx->p_cbcs->user_data,
+               rin_plugin_report_info, "Dummy can_handle_file called", -0.0f);
   (void) p_ctx;
   (void) psz_path;
-  return DUMMY_FALSE;
+  ctx
+    ->p_cbcs
+      ->report(ctx->p_cbcs->user_data,
+               rin_plugin_report_info, "Dummy can't handle file", -0.0f);
+  return false;
 }
 
 static
-int
+bool
 dummy_can_handle_dir(void *p_ctx, char const *psz_path) {
+  struct dummy_context_s *ctx = p_ctx;
   DUMMY_LOG();
+  ctx
+    ->p_cbcs
+      ->report(ctx->p_cbcs->user_data,
+               rin_plugin_report_info, "Dummy can_handle_dir called", -0.0f);
   (void) p_ctx;
   (void) psz_path;
-  return DUMMY_FALSE;
+  ctx
+    ->p_cbcs
+      ->report(ctx->p_cbcs->user_data,
+               rin_plugin_report_info, "Dummy can't handle dir", -0.0f);
+  return false;
 }
 
 static
-int
+rin_plugin_error_t
 dummy_extract(void *p_ctx, char const *psz_src, char const *psz_dst) {
+  struct dummy_context_s *ctx = p_ctx;
+  ctx
+    ->p_cbcs
+      ->report(ctx->p_cbcs->user_data,
+               rin_plugin_report_info, "Dummy extract started", -0.0f);
   DUMMY_LOG();
+
   (void) p_ctx;
   (void) psz_src;
   (void) psz_dst;
-  return DUMMY_FALSE;
+
+  ctx
+    ->p_cbcs
+      ->report(ctx->p_cbcs->user_data,
+               rin_plugin_report_info, "Dummy extract finished", -0.0f);
+  return rin_plugin_error_internal;
 }
 
 static
-int
+rin_plugin_error_t
 dummy_build(void *p_ctx, char const *psz_src, char const *psz_dst) {
+  struct dummy_context_s *ctx = p_ctx;
+  ctx
+    ->p_cbcs
+      ->report(ctx->p_cbcs->user_data,
+               rin_plugin_report_info, "Dummy build started", -0.0f);
   DUMMY_LOG();
   (void) p_ctx;
   (void) psz_src;
   (void) psz_dst;
-  return DUMMY_FALSE;
+  ctx
+    ->p_cbcs
+      ->report(ctx->p_cbcs->user_data,
+               rin_plugin_report_info, "Dummy build finished", -0.0f);
+  return rin_plugin_error_internal;
 }
 
 static struct rin_plugin_interface_s const
@@ -86,11 +128,11 @@ dummy_plugin_info = {
   .psz_author = "Rin Development Team",
   .i_iface_version = RIN_PLUGIN_API_CURRENT_VERSION,
   .i_capabilities
-    = RIN_PLUGIN_CAPS_CAN_EXTRACT
-        | RIN_PLUGIN_CAPS_CAN_BUILD
-        | RIN_PLUGIN_CAPS_CAN_HANDLE_DIR
-        | RIN_PLUGIN_CAPS_SUPPORTS_GROUPS
-        | RIN_PLUGIN_CAPS_SUPPORTS_VALIDATION
+    = rin_plugin_caps_can_extract
+        | rin_plugin_caps_can_build
+        | rin_plugin_caps_can_handle_dir
+        | rin_plugin_caps_supports_groups
+        | rin_plugin_caps_supports_validation
 };
 
 struct rin_plugin_info_s const *

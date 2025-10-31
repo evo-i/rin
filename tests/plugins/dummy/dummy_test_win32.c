@@ -1,5 +1,6 @@
 #include <glib.h>
 #include <gmodule.h>
+#include <inttypes.h>
 #include <stdio.h>
 
 #include <windows.h>
@@ -16,9 +17,37 @@ typedef struct dummy_win32_fixture_s {
   DLL_DIRECTORY_COOKIE dll_cookie;
   rin_plugin_interface_t const *p_interface;
   rin_plugin_info_t const *p_info;
+  rin_plugin_callbacks_t s_callbacks;
   void *p_instance;
 } dummy_win32_fixture_t;
 
+static
+void
+dummy_win32_report(void *opaque,
+                   rin_plugin_report_t report,
+                   char const *msg, float progress) {
+  dummy_win32_fixture_t *fixture = opaque;
+
+  switch (report) {
+    case rin_plugin_report_debug: {
+      g_print("[0x%" PRIxPTR ":debug] %s\n", opaque, msg);
+    } break;
+    case rin_plugin_report_info: {
+      g_info("[0x%" PRIxPTR ":info] %s\n", opaque, msg);
+    } break; 
+    case rin_plugin_report_warning: {
+      g_warning("[0x%" PRIxPTR ":warning] %s\n", opaque, msg);
+    } break;
+    case rin_plugin_report_error: {
+      g_error("[0x%" PRIxPTR ":error] %s\n", opaque, msg);
+    } break;
+    case rin_plugin_report_progress: {
+      g_print("[0x%" PRIxPTR ":progress] %.2f%% - %s\n", opaque, progress * 100.0f, msg);
+    } break;
+  }
+}
+
+static
 void
 dummy_win32_teardown(dummy_win32_fixture_t *fixture,
                      gconstpointer user_data) {
@@ -32,11 +61,14 @@ dummy_win32_teardown(dummy_win32_fixture_t *fixture,
   }
 }
 
+static
 void
 dummy_win32_setup(dummy_win32_fixture_t *fixture,
                   gconstpointer user_data) {
   DUMMY_UNUSED(user_data);
   char const *plugin_path = user_data;
+  fixture->s_callbacks.report = dummy_win32_report;
+  fixture->s_callbacks.user_data = fixture;
 
   g_assert_nonnull(plugin_path);
 
@@ -56,8 +88,13 @@ dummy_win32_setup(dummy_win32_fixture_t *fixture,
   fixture->p_info = fixture->p_interface->get_info();
   g_assert_nonnull(fixture->p_info);
 
-  fixture->p_instance = fixture->p_interface->create();
+  fixture->p_instance = fixture->p_interface->create(&fixture->s_callbacks);
   g_assert_nonnull(fixture->p_instance);
+
+  fixture->p_interface->can_handle_dir(fixture->p_instance, "test_dir");
+  fixture->p_interface->can_handle_file(fixture->p_instance, "test_file.rin");
+  fixture->p_interface->extract(fixture->p_instance, "src", "dst");
+  fixture->p_interface->build(fixture->p_instance, "src", "dst");
 }
 
 void
@@ -95,11 +132,11 @@ dummy_win32_check_info_fields(dummy_win32_fixture_t *fixture,
   g_assert_cmpstr(fixture->p_info->psz_author, ==, DUMMY_AUTHOR);
   g_assert_cmpstr(fixture->p_info->psz_version, ==, DUMMY_VERSION);
   g_assert_cmpstr(fixture->p_info->psz_name, ==, DUMMY_NAME);
-  g_assert_cmpint(fixture->p_info->i_capabilities & RIN_PLUGIN_CAPS_CAN_EXTRACT, !=, 0);
-  g_assert_cmpint(fixture->p_info->i_capabilities & RIN_PLUGIN_CAPS_CAN_BUILD, !=, 0);
-  g_assert_cmpint(fixture->p_info->i_capabilities & RIN_PLUGIN_CAPS_CAN_HANDLE_DIR, !=, 0);
-  g_assert_cmpint(fixture->p_info->i_capabilities & RIN_PLUGIN_CAPS_SUPPORTS_GROUPS, !=, 0);
-  g_assert_cmpint(fixture->p_info->i_capabilities & RIN_PLUGIN_CAPS_SUPPORTS_VALIDATION, !=, 0);
+  g_assert_cmpint(fixture->p_info->i_capabilities & rin_plugin_caps_can_extract, !=, 0);
+  g_assert_cmpint(fixture->p_info->i_capabilities & rin_plugin_caps_can_build, !=, 0);
+  g_assert_cmpint(fixture->p_info->i_capabilities & rin_plugin_caps_can_handle_dir, !=, 0);
+  g_assert_cmpint(fixture->p_info->i_capabilities & rin_plugin_caps_supports_groups, !=, 0);
+  g_assert_cmpint(fixture->p_info->i_capabilities & rin_plugin_caps_supports_validation, !=, 0);
 }
 
 int
