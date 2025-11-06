@@ -7,6 +7,7 @@ project ('rin', 'c',
 subdir('src')
 subdir('plugins')
 subdir('vizar')
+# subdir('utils')
 
 if get_option('examples')
   subdir('examples')

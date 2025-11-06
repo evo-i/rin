@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include <glib.h>
 #include <gmodule.h>
 
@@ -12,8 +13,36 @@ typedef struct dummy_gmodule_fixture_s {
   GModule *module;
   rin_plugin_interface_t const *p_interface;
   rin_plugin_info_t const *p_info;
+  rin_plugin_callbacks_t s_callbacks;
   void *p_instance;
 } dummy_gmodule_fixture_t;
+
+static
+void
+dummy_gmodule_report(void *opaque,
+                   rin_plugin_report_t report,
+                   char const *msg, float progress) {
+  dummy_gmodule_fixture_t *fixture = opaque;
+
+  switch (report) {
+    case rin_plugin_report_debug: {
+      g_print("[0x%" PRIxPTR ":debug] %s\n", (uintptr_t) opaque, msg);
+    } break;
+    case rin_plugin_report_info: {
+      g_info("[0x%" PRIxPTR ":info] %s\n", (uintptr_t) opaque, msg);
+    } break; 
+    case rin_plugin_report_warning: {
+      g_warning("[0x%" PRIxPTR ":warning] %s\n", (uintptr_t) opaque, msg);
+    } break;
+    case rin_plugin_report_error: {
+      g_error("[0x%" PRIxPTR ":error] %s\n", (uintptr_t) opaque, msg);
+    } break;
+    case rin_plugin_report_progress: {
+      g_print("[0x%" PRIxPTR ":progress] %.2f%% - %s\n",
+              (uintptr_t) opaque, progress * 100.0f, msg);
+    } break;
+  }
+}
 
 void
 dummy_gmodule_teardown(dummy_gmodule_fixture_t *fixture,
@@ -97,11 +126,11 @@ dummy_gmodule_check_info_fields(dummy_gmodule_fixture_t *fixture,
   g_assert_cmpstr(fixture->p_info->psz_author, ==, DUMMY_AUTHOR);
   g_assert_cmpstr(fixture->p_info->psz_version, ==, DUMMY_VERSION);
   g_assert_cmpstr(fixture->p_info->psz_name, ==, DUMMY_NAME);
-  g_assert_cmpint(fixture->p_info->i_capabilities & RIN_PLUGIN_CAPS_CAN_EXTRACT, !=, 0);
-  g_assert_cmpint(fixture->p_info->i_capabilities & RIN_PLUGIN_CAPS_CAN_BUILD, !=, 0);
-  g_assert_cmpint(fixture->p_info->i_capabilities & RIN_PLUGIN_CAPS_CAN_HANDLE_DIR, !=, 0);
-  g_assert_cmpint(fixture->p_info->i_capabilities & RIN_PLUGIN_CAPS_SUPPORTS_GROUPS, !=, 0);
-  g_assert_cmpint(fixture->p_info->i_capabilities & RIN_PLUGIN_CAPS_SUPPORTS_VALIDATION, !=, 0);
+  g_assert_cmpint(fixture->p_info->i_capabilities & rin_plugin_caps_can_extract, !=, 0);
+  g_assert_cmpint(fixture->p_info->i_capabilities & rin_plugin_caps_can_build, !=, 0);
+  g_assert_cmpint(fixture->p_info->i_capabilities & rin_plugin_caps_can_handle_dir, !=, 0);
+  g_assert_cmpint(fixture->p_info->i_capabilities & rin_plugin_caps_supports_groups, !=, 0);
+  g_assert_cmpint(fixture->p_info->i_capabilities & rin_plugin_caps_supports_validation, !=, 0);
 }
 
 int
