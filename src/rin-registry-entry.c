@@ -43,11 +43,37 @@ rin_registry_entry_reportv(void *user_data,
                            const char *msg,
                            float progress) {
   RinRegistryEntry *self = RIN_REGISTRY_ENTRY(user_data);
+  gchar const *type = NULL;
 
-  (void) self;
+  switch (level) {
+    case rin_plugin_report_debug:
+      type = "DEBUG";
+      break;
+    case rin_plugin_report_info:
+      type = "INFO";
+      break;
+    case rin_plugin_report_warning:
+      type = "WARNING";
+      break;
+    case rin_plugin_report_error:
+      type = "ERROR";
+      break;
+    case rin_plugin_report_progress:
+      type = "PROGRESS";
+      break;
+    default:
+      type = "UNKNOWN";
+      break;
+  }
 
-  g_info("Plugin report (level %d, progress %.2f): %s",
-         level, progress, msg);
+  if (level == rin_plugin_report_progress) {
+    g_print("[0x%08" G_GINTPTR_MODIFIER "x|%s|%s] %s: %.2f%%\n",
+            (gintptr) self, rin_registry_entry_get_name(self),
+            type, msg, progress * 100.0f);
+  } else {
+    g_print("[0x%08" G_GINTPTR_MODIFIER "x|%s|%s] %s\n",
+            (gintptr) self, rin_registry_entry_get_name(self), type, msg);
+  }
 }
 
 static void

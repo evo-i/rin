@@ -87,8 +87,7 @@ rin_registry_set_property(GObject *object,
         = g_value_get_pointer(value);
 
       if (!g_file_test(dir_path, G_FILE_TEST_IS_DIR
-                                  | G_FILE_TEST_EXISTS
-                                  | G_FILE_TEST_IS_EXECUTABLE)) {
+                                  | G_FILE_TEST_EXISTS)) {
         g_warning("Provided plugins directory path is invalid: %s", dir_path);
         return;
       }
@@ -208,8 +207,7 @@ rin_registry_set_plugins_path(RinRegistry *self, gchar const *dir_path) {
   g_return_val_if_fail(dir_path != NULL, FALSE);
 
   if (!g_file_test(dir_path, G_FILE_TEST_IS_DIR
-                              | G_FILE_TEST_EXISTS
-                              | G_FILE_TEST_IS_EXECUTABLE)) {
+                              | G_FILE_TEST_EXISTS)) {
     g_warning("Provided plugins directory path is invalid: %s", dir_path);
     return FALSE;
   }

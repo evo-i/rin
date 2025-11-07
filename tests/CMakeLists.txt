@@ -15,5 +15,6 @@ target_include_directories(test-rin-registry
 
 target_compile_options(test-rin-registry PRIVATE ${GLIB_CFLAGS_OTHER})
 
-enable_testing()
 add_test(NAME rin-registry-test COMMAND test-rin-registry)
+
+add_dependencies(test-rin-registry rin soul_worker dummy_plugin)

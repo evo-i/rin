@@ -1,27 +1,57 @@
 cmake_minimum_required(VERSION 3.16)
-set(ENV{SW_TEST_PATH} "")
 
 set(SW_PLUGIN_SOURCES
   sw_plugin.c
   sw_private.c
 )
 
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(LIBZIP REQUIRED libzip)
+include(FetchContent)
 
-add_library(soul_worker MODULE ${SW_PLUGIN_SOURCES})
+FetchContent_Declare(
+  libzip
+  GIT_REPOSITORY https://github.com/nih-at/libzip.git
+  GIT_TAG v1.10.1  # Последняя стабильная версия
+  GIT_SHALLOW TRUE
+)
+
+set(BUILD_TOOLS OFF CACHE BOOL "Build libzip tools" FORCE)
+set(BUILD_REGRESS OFF CACHE BOOL "Build regression tests" FORCE)
+set(BUILD_EXAMPLES OFF CACHE BOOL "Build examples" FORCE)
+set(BUILD_DOC OFF CACHE BOOL "Build documentation" FORCE)
+set(ENABLE_COMMONCRYPTO OFF CACHE BOOL "Enable use of CommonCrypto" FORCE)
+set(ENABLE_GNUTLS OFF CACHE BOOL "Enable use of GnuTLS" FORCE)
+set(ENABLE_MBEDTLS OFF CACHE BOOL "Enable use of mbed TLS" FORCE)
+set(ENABLE_OPENSSL ON CACHE BOOL "Enable use of OpenSSL" FORCE)
+set(ENABLE_WINDOWS_CRYPTO OFF CACHE BOOL "Enable use of Windows cryptography libraries" FORCE)
+set(ENABLE_BZIP2 ON CACHE BOOL "Enable use of BZip2" FORCE)
+set(ENABLE_LZMA ON CACHE BOOL "Enable use of LZMA" FORCE)
+set(ENABLE_ZSTD ON CACHE BOOL "Enable use of Zstandard" FORCE)
+
+set(ZIP_DOXYGEN OFF CACHE BOOL "Generate API documentation" FORCE)
+if(MINGW)
+  add_compile_definitions(ZIP_STATIC)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-incompatible-pointer-types")
+  add_compile_definitions(_WIN32_WINNT=0x0600)
+  set(ENABLE_WINDOWS_CRYPTO OFF CACHE BOOL "Disable Windows crypto to avoid UTF-16 issues" FORCE)
+endif()
+
+FetchContent_MakeAvailable(libzip)
+
+# Определяем тип сборки плагина
+if(WIN32 AND NOT BUILD_SHARED_LIBS)
+    add_library(soul_worker STATIC ${SW_PLUGIN_SOURCES})
+else()
+    add_library(soul_worker MODULE ${SW_PLUGIN_SOURCES})
+endif()
 
 target_include_directories(soul_worker
   PRIVATE
     ${CMAKE_SOURCE_DIR}/src
-    ${LIBZIP_INCLUDE_DIRS}
 )
 
 target_link_libraries(soul_worker
-  PRIVATE ${LIBZIP_LIBRARIES}
+  PRIVATE libzip::zip
 )
-
-target_compile_options(soul_worker PRIVATE ${LIBZIP_CFLAGS_OTHER})
 
 set_target_properties(soul_worker PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/plugins
@@ -40,24 +70,14 @@ set_target_properties(test_sw_plugin PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/tests
 )
 
-# Add test
-if(CMAKE_TESTING_ENABLED OR BUILD_TESTING)
-  enable_testing()
-  
-  # Test requires Soul Worker installation path
-  # Set SW_TEST_PATH environment variable to enable test
-  if(DEFINED ENV{SW_TEST_PATH})
-    add_test(
-      NAME soul_worker_plugin_test
-      COMMAND test_sw_plugin "$ENV{SW_TEST_PATH}"
-      WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/tests
-    )
-    
-    set_tests_properties(soul_worker_plugin_test PROPERTIES
-      TIMEOUT 30
-      LABELS "plugin;soul_worker"
-    )
-  else()
-    message(STATUS "Soul Worker test disabled. Set SW_TEST_PATH environment variable to enable.")
-  endif()
-endif()
+add_test(
+  NAME soul_worker_plugin_test
+  COMMAND test_sw_plugin "$ENV{SW_TEST_PATH}"
+  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/tests
+)
+
+set_tests_properties(soul_worker_plugin_test PROPERTIES
+  TIMEOUT 30
+  LABELS "plugin;soul_worker"
+)
+

@@ -2,6 +2,7 @@
 #define SW_PRIVATE_H 1
 
 #include "rin-plugin-api.h"
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
