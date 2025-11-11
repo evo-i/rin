@@ -1,4 +1,4 @@
-#include "sw_private.h"
+#include "soul_worker_private.h"
 
 #include <zip.h>
 #include <stdio.h>
@@ -365,6 +365,27 @@ plugin_can_handle_dir(void *priv, char const *dir_name) {
     return false;
   }
 
+  // Load passwords immediately when we detect a valid directory
+  if (self->passwords.count == 0) {
+    char *full_path = local_get_full_path(dir_name);
+    if (full_path) {
+      plugin_context_t ctx;
+      ctx.data = *self;
+      if (plugin_get_passwords(&ctx, full_path, &self->passwords)) {
+        self->callbacks->report(self->callbacks->user_data,
+                                rin_plugin_report_info,
+                                "Passwords loaded successfully.",
+                                0.0f);
+      } else {
+        self->callbacks->report(self->callbacks->user_data,
+                                rin_plugin_report_warning,
+                                "Failed to load passwords (will retry during extraction).",
+                                0.0f);
+      }
+      free(full_path);
+    }
+  }
+
   self->callbacks->report(self->callbacks->user_data,
                           rin_plugin_report_info,
                           "Directory can be handled by the plugin.",
@@ -561,7 +582,7 @@ plugin_extract(void *priv, char const *src, char const *dst) {
     return rin_plugin_error_io;
   }
 
-  // Load passwords if not loaded
+  // Load passwords if not loaded (fallback if can_handle_dir wasn't called)
   if (self->passwords.count == 0) {
     char sw_path[4096];
     strcpy(sw_path, full_src_path);
@@ -577,16 +598,75 @@ plugin_extract(void *priv, char const *src, char const *dst) {
     }
   }
 
+  // Check for range filter from environment variables
+  int start_index = -1;
+  int end_index = -1;
+  const char *env_start = getenv("SWAE_START_INDEX");
+  const char *env_end = getenv("SWAE_END_INDEX");
+  
+  if (env_start) {
+    start_index = atoi(env_start);
+  }
+  if (env_end) {
+    end_index = atoi(env_end);
+  }
+
   size_t files_count = 0;
   char **files_list = local_get_files_list(full_src_path, &files_count);
   zip_error_t zip_err;
   zip_error_init(&zip_err);
 
+  size_t processed = 0;
+  size_t total_to_process = 0;
+  
+  // Count files to process
   for (size_t i = 0; i < files_count; ++i) {
+    const char *basename = local_basename(files_list[i]);
+    int file_index = -1;
+    
+    // Extract index from filename (e.g., data05.v -> 5)
+    // Only count .v files (exact match)
+    size_t name_len = strlen(basename);
+    if (name_len > 2 && basename[name_len - 2] == '.' && basename[name_len - 1] == 'v') {
+      if (sscanf(basename, "data%d.v", &file_index) == 1) {
+        if ((start_index < 0 || file_index >= start_index) &&
+            (end_index < 0 || file_index <= end_index)) {
+          total_to_process++;
+        }
+      }
+    }
+  }
+
+  for (size_t i = 0; i < files_count; ++i) {
+    const char *basename = local_basename(files_list[i]);
+    int file_index = -1;
+    
+    // Extract index from filename (e.g., data05.v -> 5)
+    // Only process .v files (exact match)
+    size_t name_len = strlen(basename);
+    if (name_len > 2 && basename[name_len - 2] == '.' && basename[name_len - 1] == 'v') {
+      if (sscanf(basename, "data%d.v", &file_index) == 1) {
+        // Check if file is in the requested range
+        if (start_index >= 0 && file_index < start_index) {
+          continue; // Skip files before start
+        }
+        if (end_index >= 0 && file_index > end_index) {
+          continue; // Skip files after end
+        }
+      } else {
+        // .v file but not matching data##.v pattern - skip
+        continue;
+      }
+    } else {
+      // Not a .v file - skip
+      continue;
+    }
+
+    processed++;
     self->callbacks->report(self->callbacks->user_data,
                             rin_plugin_report_info,
                             files_list[i],
-                            (float)(i + 1) / (float)files_count);
+                            total_to_process > 0 ? (float)processed / (float)total_to_process : 0.0f);
 
     // Decide whether to apply XOR layer based on header
     bool use_layer = false;
@@ -636,8 +716,8 @@ plugin_extract(void *priv, char const *src, char const *dst) {
       continue;
     }
 
-    // Create output directory: dst/<archive name>
-    const char *archive_name = local_basename(files_list[i]);
+    // Create output directory: dst/<archive name without extension>
+    const char *archive_name = local_basename_no_ext(files_list[i]);
     char out_dir[4096];
     snprintf(out_dir, sizeof(out_dir), "%s/%s", dst, archive_name);
     if (!local_mkdir_p(out_dir)) {

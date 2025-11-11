@@ -13,6 +13,6 @@ target_include_directories(dummy_plugin
 )
 
 set_target_properties(dummy_plugin PROPERTIES
-  LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/plugins
-  RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/plugins
+  LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/plugins/dummy
+  RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/plugins/dummy
 )

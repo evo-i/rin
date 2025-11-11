@@ -9,53 +9,26 @@ set(RIN_HEADERS
   rin-plugin-api.h
 )
 
-# Определяем тип сборки
-if(WIN32 AND NOT BUILD_SHARED_LIBS)
-    add_library(rin STATIC ${RIN_SOURCES} ${RIN_HEADERS})
-else()
-    add_library(rin SHARED ${RIN_SOURCES} ${RIN_HEADERS})
-endif()
+find_package(PkgConfig REQUIRED)
+
+pkg_check_modules(GLib REQUIRED IMPORTED_TARGET glib-2.0)
+pkg_check_modules(GObject REQUIRED IMPORTED_TARGET gobject-2.0)
+pkg_check_modules(GIO REQUIRED IMPORTED_TARGET gio-2.0)
+pkg_check_modules(GModule REQUIRED IMPORTED_TARGET gmodule-2.0)
+
+add_library(rin SHARED ${RIN_SOURCES} ${RIN_HEADERS})
 
 target_include_directories(rin
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${GLIB_INCLUDE_DIRS}
+         ${GLIB_INCLUDE_DIRS}
+         ${GOBJECT_INCLUDE_DIRS}
+         ${GIO_INCLUDE_DIRS}
+         ${GMODULE_INCLUDE_DIRS}
 )
 
 target_link_libraries(rin
-  PRIVATE ${GLIB_LIBRARIES}
+  PRIVATE PkgConfig::GLib
+          PkgConfig::GObject
+          PkgConfig::GIO
+          PkgConfig::GModule
 )
-
-target_compile_options(rin PRIVATE ${GLIB_CFLAGS_OTHER})
-
-# Настройки для статической линковки под Windows
-if(WIN32 AND NOT BUILD_SHARED_LIBS)
-    target_compile_definitions(rin PRIVATE GOBJECT_STATIC_COMPILATION)
-    target_compile_definitions(rin PRIVATE GMODULE_STATIC_COMPILATION)
-    target_compile_definitions(rin PRIVATE GIO_STATIC_COMPILATION)
-
-    # Дополнительные библиотеки для статической линковки
-    if(MSVC)
-        target_link_libraries(rin PRIVATE
-            ws2_32
-            ole32
-            shell32
-            advapi32
-            user32
-            kernel32
-        )
-    else()
-        target_link_libraries(rin PRIVATE
-            ws2_32
-            ole32
-            shell32
-            advapi32
-            user32
-            kernel32
-            iconv
-            intl
-            pcre
-            ffi
-            z
-        )
-    endif()
-endif()
