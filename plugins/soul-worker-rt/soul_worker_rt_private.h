@@ -6,55 +6,26 @@ extern "C" {
 #endif /* __cplusplus */
 
 #include <stdint.h>
+#include <stdio.h>
 
-typedef struct prefixed_string_s {
-  uint16_t  length;
-  char* value;
-} prefixed_string_t;
+#include "prefixed_string.h"
 
-typedef struct prefixed_wstring_s {
-  uint16_t  length;
-  uint16_t* value;
-} prefixed_wstring_t;
+#define LANGUAGE_PLACEHOLDER  "%language%"
 
-typedef struct achievement_data_s {
-  uint32_t          id;
-  prefixed_wstring_t title;
-  prefixed_wstring_t description;
-} achievement_data_t;
+#define LANGUAGE_ENGLISH      "ENG"
+#define LANGUAGE_THAIWAN      "TWN"
+#define LANGUAGE_CHINESE      "CHN"
 
-typedef struct achievement_table_s {
-  uint32_t            count;
-  achievement_data_t* achievements;
-  prefixed_string_t   hash;
-} achievement_table_t;
+#define TABLE_NAME(NAME, LANG) NAME "_" LANG ".res"
 
-typedef struct booster_data_s {
-  uint16_t          id;
-  prefixed_string_t name;
-  prefixed_string_t description;
-  prefixed_string_t icon;
-} booster_data_t;
+#define ACHIEVEMENT_TABLE_NAME \
+  TABLE_NAME("tb_Achievement_Script", LANGUAGE_PLACEHOLDER)
 
-typedef struct booster_table_s {
-  uint32_t        count;
-  booster_data_t* boosters;
-  uint8_t*        hash;
-} booster_table_t;
+#define BOOSTER_TABLE_NAME \
+  TABLE_NAME("tb_Booster_Script", LANGUAGE_PLACEHOLDER)
 
-typedef struct buff_data_s {
-  uint16_t          id;
-  prefixed_string_t name;
-  prefixed_string_t description;
-  prefixed_string_t icon;
-  prefixed_string_t effect;
-} buff_data_t;
-
-typedef struct buff_table_s {
-  uint32_t     count;
-  buff_data_t* buffs;
-  uint8_t*     hash;
-} buff_table_t;
+#define BUFF_TABLE_NAME \
+  TABLE_NAME("tb_Buff_Script", LANGUAGE_PLACEHOLDER)
 
 #ifdef __cplusplus
 } /* extern "C" */
