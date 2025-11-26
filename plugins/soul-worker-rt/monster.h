@@ -18,16 +18,22 @@ struct monster *
 monster_new(void);
 
 size_t
-monster_read_from_file(FILE *file, struct monster *self);
+monster_read(FILE *file, struct monster *self);
 
 size_t
-monster_write_to_file(FILE *file, struct monster const *self);
+monster_write(FILE *file, struct monster const *self);
 
-size_t
+void
 monster_free(struct monster *self);
 
 size_t
 monster_hash(struct monster const *self);
+
+void
+monster_print(struct monster const *self);
+
+size_t
+monster_size(struct monster const *self);
 
 #ifdef __cplusplus
 }

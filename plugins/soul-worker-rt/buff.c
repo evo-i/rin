@@ -1,4 +1,5 @@
 #include "buff.h"
+#include "common.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -19,99 +20,116 @@ buff_new(void) {
 }
 
 size_t
-buff_read_from_file(FILE *file, struct buff *self) {
-  size_t read_count = 0;
+buff_read(FILE *file, struct buff *self) {
+  VALIDATE_PTR(file);
+  VALIDATE_PTR(self);
 
-  read_count = fread(&self->id, sizeof(self->id), 1, file);
-  if (read_count != 1) {
-    printf("Failed to read buff ID\n");
+  size_t total_size = 0;
+
+  size_t read_count = fread(&self->id, sizeof(self->id), 1, file);
+  VALIDATE_READ(read_count == 1, (void)0);
+
+  if (!safe_size_add(total_size, sizeof(self->id), &total_size)) {
     return 0;
   }
 
-  size_t name_read = prefixed_wstring_read_from_file(file, &self->name);
-  if (name_read == 0) {
-    printf("Failed to read buff name for ID %" PRIu32 "\n", self->id);
-    return 0;
-  }
+  size_t name_read = prefixed_wstring_read(file, &self->name);
+  VALIDATE_READ(name_read > 0, (void)0);
 
-  size_t desc_read = prefixed_wstring_read_from_file(file, &self->description);
-  if (desc_read == 0) {
-    printf("Failed to read buff desc for ID %" PRIu32 "\n", self->id);
+  if (!safe_size_add(total_size, name_read, &total_size)) {
     prefixed_wstring_free(&self->name);
     return 0;
   }
 
-  size_t icon_read = prefixed_wstring_read_from_file(file, &self->icon);
-  if (icon_read == 0) {
-    printf("Failed to read buff icon for ID %" PRIu32 "\n", self->id);
+  size_t desc_read = prefixed_wstring_read(file, &self->description);
+  VALIDATE_READ(desc_read > 0, prefixed_wstring_free(&self->name));
+
+  if (!safe_size_add(total_size, desc_read, &total_size)) {
     prefixed_wstring_free(&self->name);
     prefixed_wstring_free(&self->description);
     return 0;
   }
 
-  size_t tip_read = prefixed_wstring_read_from_file(file, &self->tip);
-  if (tip_read == 0) {
-    printf("Failed to read buff tip for ID %" PRIu32 "\n", self->id);
+  size_t icon_read = prefixed_wstring_read(file, &self->icon);
+  VALIDATE_READ(icon_read > 0, {
+    prefixed_wstring_free(&self->name);
+    prefixed_wstring_free(&self->description);
+  });
+
+  if (!safe_size_add(total_size, icon_read, &total_size)) {
     prefixed_wstring_free(&self->name);
     prefixed_wstring_free(&self->description);
     prefixed_wstring_free(&self->icon);
     return 0;
   }
 
-  return
-    sizeof(self->id)
-      + name_read
-      + desc_read
-      + icon_read
-      + tip_read;
+  size_t tip_read = prefixed_wstring_read(file, &self->tip);
+  VALIDATE_READ(tip_read > 0, {
+    prefixed_wstring_free(&self->name);
+    prefixed_wstring_free(&self->description);
+    prefixed_wstring_free(&self->icon);
+  });
+
+  if (!safe_size_add(total_size, tip_read, &total_size)) {
+    prefixed_wstring_free(&self->name);
+    prefixed_wstring_free(&self->description);
+    prefixed_wstring_free(&self->icon);
+    prefixed_wstring_free(&self->tip);
+    return 0;
+  }
+
+  return total_size;
 }
 
 size_t
-buff_write_to_file(FILE *file, struct buff const *self) {
-  size_t write_count = 0;
+buff_write(FILE *file, struct buff const *self) {
+  VALIDATE_PTR(file);
+  VALIDATE_PTR(self);
+
+  size_t total_size = 0;
 
   size_t id_write = fwrite(&self->id, sizeof(self->id), 1, file);
-  if (id_write != 1) {
+  VALIDATE_READ(id_write == 1, (void)0);
+
+  if (!safe_size_add(total_size, sizeof(self->id), &total_size)) {
     return 0;
   }
 
-  write_count += id_write;
+  size_t name_write = prefixed_wstring_write(file, &self->name);
+  VALIDATE_READ(name_write > 0, (void)0);
 
-  size_t name_write = prefixed_wstring_write_to_file(file, &self->name);
-  if (name_write == 0) {
+  if (!safe_size_add(total_size, name_write, &total_size)) {
     return 0;
   }
 
-  write_count += name_write;
+  size_t desc_write = prefixed_wstring_write(file, &self->description);
+  VALIDATE_READ(desc_write > 0, (void)0);
 
-  size_t desc_write = prefixed_wstring_write_to_file(file, &self->description);
-  if (desc_write == 0) {
+  if (!safe_size_add(total_size, desc_write, &total_size)) {
     return 0;
   }
 
-  write_count += desc_write;
+  size_t icon_write = prefixed_wstring_write(file, &self->icon);
+  VALIDATE_READ(icon_write > 0, (void)0);
 
-  size_t icon_write = prefixed_wstring_write_to_file(file, &self->icon);
-  if (icon_write == 0) {
+  if (!safe_size_add(total_size, icon_write, &total_size)) {
     return 0;
   }
 
-  write_count += icon_write;
+  size_t tip_write = prefixed_wstring_write(file, &self->tip);
+  VALIDATE_READ(tip_write > 0, (void)0);
 
-  size_t tip_write = prefixed_wstring_write_to_file(file, &self->tip);
-  if (tip_write == 0) {
+  if (!safe_size_add(total_size, tip_write, &total_size)) {
     return 0;
   }
 
-  write_count += tip_write;
-
-  return write_count;
+  return total_size;
 }
 
-size_t
+void
 buff_free(struct buff *self) {
   if (!self) {
-    return 0;
+    return;
   }
 
   prefixed_wstring_free(&self->name);
@@ -120,13 +138,12 @@ buff_free(struct buff *self) {
   prefixed_wstring_free(&self->tip);
 
   free(self);
-  return 0;
 }
 
-size_t
+void
 buff_print(struct buff const *self) {
   if (!self) {
-    return 0;
+    return;
   }
 
   printf("Buff ID: %" PRIu32 "\n", self->id);
@@ -139,42 +156,6 @@ buff_print(struct buff const *self) {
   printf("\nTip: ");
   prefixed_wstring_print(&self->tip);
   printf("\n");
-
-  return 0;
-}
-
-size_t
-buff_compare(struct buff const *a,
-             struct buff const *b) {
-  if (a == b) {
-    return 1;
-  }
-
-  if (!a || !b) {
-    return 0;
-  }
-
-  if (a->id != b->id) {
-    return 0;
-  }
-
-  if (!prefixed_wstring_compare(&a->name, &b->name)) {
-    return 0;
-  }
-
-  if (!prefixed_wstring_compare(&a->description, &b->description)) {
-    return 0;
-  }
-
-  if (!prefixed_wstring_compare(&a->icon, &b->icon)) {
-    return 0;
-  }
-
-  if (!prefixed_wstring_compare(&a->tip, &b->tip)) {
-    return 0;
-  }
-
-  return 1;
 }
 
 size_t
@@ -206,46 +187,4 @@ buff_size(struct buff const *self) {
       + prefixed_wstring_size(&self->description)
       + prefixed_wstring_size(&self->icon)
       + prefixed_wstring_size(&self->tip);
-}
-
-size_t
-buff_copy(struct buff *dest,
-          struct buff const *src) {
-  if (!dest || !src) {
-    return 0;
-  }
-
-  dest->id = src->id;
-  dest->name.length = 0;
-  dest->name.value = NULL;
-  dest->description.length = 0;
-  dest->description.value = NULL;
-  dest->icon.length = 0;
-  dest->icon.value = NULL;
-  dest->tip.length = 0;
-  dest->tip.value = NULL;
-
-  if (prefixed_wstring_copy(&dest->name, &src->name) == 0) {
-    return 0;
-  }
-
-  if (prefixed_wstring_copy(&dest->description, &src->description) == 0) {
-    prefixed_wstring_free(&dest->name);
-    return 0;
-  }
-
-  if (prefixed_wstring_copy(&dest->icon, &src->icon) == 0) {
-    prefixed_wstring_free(&dest->name);
-    prefixed_wstring_free(&dest->description);
-    return 0;
-  }
-
-  if (prefixed_wstring_copy(&dest->tip, &src->tip) == 0) {
-    prefixed_wstring_free(&dest->name);
-    prefixed_wstring_free(&dest->description);
-    prefixed_wstring_free(&dest->icon);
-    return 0;
-  }
-
-  return buff_size(dest);
 }

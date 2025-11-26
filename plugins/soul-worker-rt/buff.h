@@ -21,30 +21,22 @@ struct buff *
 buff_new(void);
 
 size_t
-buff_read_from_file(FILE *file, struct buff *self);
+buff_read(FILE *file, struct buff *self);
 
 size_t
-buff_write_to_file(FILE *file, struct buff const *self);
+buff_write(FILE *file, struct buff const *self);
 
-size_t
+void
 buff_free(struct buff *self);
 
-size_t
+void
 buff_print(struct buff const *self);
-
-size_t
-buff_compare(struct buff const *a,
-             struct buff const *b);
 
 size_t
 buff_hash(struct buff const *self);
 
 size_t
 buff_size(struct buff const *self);
-
-size_t
-buff_copy(struct buff *dest,
-          struct buff const *src);
 
 #ifdef __cplusplus
 }

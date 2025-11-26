@@ -44,22 +44,22 @@ prefixed_wstring_size(const struct prefixed_wstring* str) {
 }
 
 size_t
-prefixed_string_read_from_file(FILE *file, struct prefixed_string *self);
+prefixed_string_read(FILE *file, struct prefixed_string *self);
 
 size_t
-prefixed_wstring_read_from_file(FILE *file, struct prefixed_wstring *self);
+prefixed_wstring_read(FILE *file, struct prefixed_wstring *self);
 
 size_t
-prefixed_string_write_to_file(FILE *file, struct prefixed_string const *self);
+prefixed_string_write(FILE *file, struct prefixed_string const *self);
 
 size_t
-prefixed_wstring_write_to_file(FILE *file, struct prefixed_wstring const *self);
+prefixed_wstring_write(FILE *file, struct prefixed_wstring const *self);
 
 size_t
-prefixed_string_skip_in_file(FILE *file);
+prefixed_string_skip(FILE *file);
 
 size_t
-prefixed_wstring_skip_in_file(FILE *file);
+prefixed_wstring_skip(FILE *file);
 
 size_t
 prefixed_string_copy(struct prefixed_string *dest,
@@ -75,10 +75,10 @@ prefixed_string_free(struct prefixed_string *self);
 void
 prefixed_wstring_free(struct prefixed_wstring *self);
 
-size_t
+void
 prefixed_string_print(struct prefixed_string const *self);
 
-size_t
+void
 prefixed_wstring_print(struct prefixed_wstring const *self);
 
 size_t

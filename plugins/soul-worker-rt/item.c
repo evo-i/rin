@@ -1,212 +1,263 @@
 #include "item.h"
+#include "common.h"
+
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stddef.h>
 
-struct item *
+struct item*
 item_new(void) {
-  struct item *self = malloc(sizeof(struct item));
-  if (!self) return NULL;
+  struct item* self = malloc(sizeof(struct item));
+  if (!self) {
+    return NULL;
+  }
+
   memset(self, 0, sizeof(*self));
   return self;
 }
 
+static
 size_t
-item_read_from_file(FILE *file, struct item *self) {
+item_resources_read_from_file(FILE* file, struct item_resources* res) {
+  size_t total_read = 0;
+  for (size_t i = 0; i < ITEM_RESOURCE_COUNT; i++) {
+    size_t res_read = prefixed_wstring_read(file, &res->values[i]);
+
+    if (res_read == 0) {
+      return 0;
+    }
+
+    total_read += res_read;
+  }
+
+  size_t flags_read = fread(res->flags, sizeof(res->flags), 1, file);
+
+  if (flags_read != 1) {
+    return 0;
+  }
+
+  total_read += sizeof(res->flags);
+  return total_read;
+}
+
+static
+void
+item_free_resources(struct item_resources* res) {
+  for (size_t i = 0; i < ITEM_RESOURCE_COUNT; i++) {
+    prefixed_wstring_free(&res->values[i]);
+  }
+}
+
+static
+size_t
+item_resources_size(struct item_resources const* res) {
+  size_t total_size = 0;
+
+  for (size_t i = 0; i < ITEM_RESOURCE_COUNT; i++) {
+    total_size += prefixed_wstring_size(&res->values[i]);
+  }
+
+  total_size += sizeof(res->flags);
+  return total_size;
+}
+
+static
+size_t
+item_resources_hash(struct item_resources const* res) {
+  size_t h = 0;
+
+  for (size_t i = 0; i < ITEM_RESOURCE_COUNT; i++) {
+    h += prefixed_wstring_hash(&res->values[i]);
+    h += res->flags[i];
+  }
+
+  return h;
+}
+
+size_t
+item_read(FILE* file, struct item* self) {
+  VALIDATE_PTR(file);
+  VALIDATE_PTR(self);
+
+  size_t total_size = 0;
+
   size_t read_count = fread(&self->id, sizeof(self->id), 1, file);
-  if (read_count != 1) return 0;
+  VALIDATE_READ(read_count == 1, (void)0);
 
-  size_t u1_read = prefixed_wstring_read_from_file(file, &self->unknown1);
-  if (u1_read == 0) return 0;
-
-  size_t u2_read = prefixed_wstring_read_from_file(file, &self->unknown2);
-  if (u2_read == 0) {
-    prefixed_wstring_free(&self->unknown1);
+  if (!safe_size_add(total_size, sizeof(self->id), &total_size)) {
     return 0;
   }
 
-  size_t u3_read = prefixed_wstring_read_from_file(file, &self->unknown3);
-  if (u3_read == 0) {
-    prefixed_wstring_free(&self->unknown1);
-    prefixed_wstring_free(&self->unknown2);
+  size_t icon_read = prefixed_wstring_read(file, &self->icon);
+  VALIDATE_READ(icon_read > 0, (void)0);
+
+  if (!safe_size_add(total_size, icon_read, &total_size)) {
+    prefixed_wstring_free(&self->icon);
     return 0;
   }
 
-  size_t u4_read = prefixed_wstring_read_from_file(file, &self->unknown4);
-  if (u4_read == 0) {
-    prefixed_wstring_free(&self->unknown1);
-    prefixed_wstring_free(&self->unknown2);
-    prefixed_wstring_free(&self->unknown3);
+  size_t resources_read = item_resources_read_from_file(file, &self->resources);
+  if (resources_read == 0) {
+    prefixed_wstring_free(&self->icon);
+    item_free_resources(&self->resources);
     return 0;
   }
 
-  size_t u5_read = prefixed_wstring_read_from_file(file, &self->unknown5);
-  if (u5_read == 0) {
-    prefixed_wstring_free(&self->unknown1);
-    prefixed_wstring_free(&self->unknown2);
-    prefixed_wstring_free(&self->unknown3);
-    prefixed_wstring_free(&self->unknown4);
+  if (!safe_size_add(total_size, resources_read, &total_size)) {
+    prefixed_wstring_free(&self->icon);
+    item_free_resources(&self->resources);
     return 0;
   }
 
-  size_t u6_read = prefixed_wstring_read_from_file(file, &self->unknown6);
-  if (u6_read == 0) {
-    prefixed_wstring_free(&self->unknown1);
-    prefixed_wstring_free(&self->unknown2);
-    prefixed_wstring_free(&self->unknown3);
-    prefixed_wstring_free(&self->unknown4);
-    prefixed_wstring_free(&self->unknown5);
-    return 0;
-  }
-
-  read_count = fread(self->flags, sizeof(self->flags), 1, file);
-  if (read_count != 1) {
-    prefixed_wstring_free(&self->unknown1);
-    prefixed_wstring_free(&self->unknown2);
-    prefixed_wstring_free(&self->unknown3);
-    prefixed_wstring_free(&self->unknown4);
-    prefixed_wstring_free(&self->unknown5);
-    prefixed_wstring_free(&self->unknown6);
-    return 0;
-  }
-
-  size_t name_read = prefixed_wstring_read_from_file(file, &self->name);
+  size_t name_read = prefixed_wstring_read(file, &self->name);
   if (name_read == 0) {
-    prefixed_wstring_free(&self->unknown1);
-    prefixed_wstring_free(&self->unknown2);
-    prefixed_wstring_free(&self->unknown3);
-    prefixed_wstring_free(&self->unknown4);
-    prefixed_wstring_free(&self->unknown5);
-    prefixed_wstring_free(&self->unknown6);
+    prefixed_wstring_free(&self->icon);
+    item_free_resources(&self->resources);
     return 0;
   }
 
-  size_t desc_read = prefixed_wstring_read_from_file(file, &self->description);
-  if (desc_read == 0) {
-    prefixed_wstring_free(&self->unknown1);
-    prefixed_wstring_free(&self->unknown2);
-    prefixed_wstring_free(&self->unknown3);
-    prefixed_wstring_free(&self->unknown4);
-    prefixed_wstring_free(&self->unknown5);
-    prefixed_wstring_free(&self->unknown6);
+  if (!safe_size_add(total_size, name_read, &total_size)) {
+    prefixed_wstring_free(&self->icon);
     prefixed_wstring_free(&self->name);
+    item_free_resources(&self->resources);
     return 0;
   }
 
-  return sizeof(self->id) + u1_read + u2_read + u3_read + u4_read + u5_read + u6_read + sizeof(self->flags) + name_read + desc_read;
+  size_t desc_read = prefixed_wstring_read(file, &self->description);
+  if (desc_read == 0) {
+    prefixed_wstring_free(&self->icon);
+    prefixed_wstring_free(&self->name);
+    item_free_resources(&self->resources);
+    return 0;
+  }
+
+  if (!safe_size_add(total_size, desc_read, &total_size)) {
+    prefixed_wstring_free(&self->icon);
+    prefixed_wstring_free(&self->name);
+    prefixed_wstring_free(&self->description);
+    item_free_resources(&self->resources);
+    return 0;
+  }
+
+  return total_size;
+}
+
+static
+size_t
+item_resources_write_to_file(FILE* file, struct item_resources const* res) {
+  size_t total_written = 0;
+  for (size_t i = 0; i < ITEM_RESOURCE_COUNT; i++) {
+    total_written += prefixed_wstring_write(file, &res->values[i]);
+  }
+
+  total_written += fwrite(res->flags, sizeof(res->flags), 1, file);
+
+  return total_written;
 }
 
 size_t
-item_write_to_file(FILE *file, struct item const *self) {
-  size_t write_count = 0;
+item_write(FILE* file, struct item const* self) {
+  VALIDATE_PTR(file);
+  VALIDATE_PTR(self);
+
+  size_t total_size = 0;
+
   size_t id_write = fwrite(&self->id, sizeof(self->id), 1, file);
-  if (id_write != 1) return 0;
-  write_count += id_write * sizeof(self->id);
+  VALIDATE_READ(id_write == 1, (void)0);
 
-  size_t u1_write = prefixed_wstring_write_to_file(file, &self->unknown1);
-  if (u1_write == 0) return 0;
-  write_count += u1_write;
+  if (!safe_size_add(total_size, sizeof(self->id), &total_size)) {
+    return 0;
+  }
 
-  size_t u2_write = prefixed_wstring_write_to_file(file, &self->unknown2);
-  if (u2_write == 0) return 0;
-  write_count += u2_write;
+  size_t icon_write = prefixed_wstring_write(file, &self->icon);
+  VALIDATE_READ(icon_write > 0, (void)0);
 
-  size_t u3_write = prefixed_wstring_write_to_file(file, &self->unknown3);
-  if (u3_write == 0) return 0;
-  write_count += u3_write;
+  if (!safe_size_add(total_size, icon_write, &total_size)) {
+    return 0;
+  }
 
-  size_t u4_write = prefixed_wstring_write_to_file(file, &self->unknown4);
-  if (u4_write == 0) return 0;
-  write_count += u4_write;
+  size_t resources_write = item_resources_write_to_file(file, &self->resources);
+  VALIDATE_READ(resources_write > 0, (void)0);
 
-  size_t u5_write = prefixed_wstring_write_to_file(file, &self->unknown5);
-  if (u5_write == 0) return 0;
-  write_count += u5_write;
+  if (!safe_size_add(total_size, resources_write, &total_size)) {
+    return 0;
+  }
 
-  size_t u6_write = prefixed_wstring_write_to_file(file, &self->unknown6);
-  if (u6_write == 0) return 0;
-  write_count += u6_write;
+  size_t name_write = prefixed_wstring_write(file, &self->name);
+  VALIDATE_READ(name_write > 0, (void)0);
 
-  size_t flags_write = fwrite(self->flags, sizeof(self->flags), 1, file);
-  if (flags_write != 1) return 0;
-  write_count += flags_write * sizeof(self->flags);
+  if (!safe_size_add(total_size, name_write, &total_size)) {
+    return 0;
+  }
 
-  size_t name_write = prefixed_wstring_write_to_file(file, &self->name);
-  if (name_write == 0) return 0;
-  write_count += name_write;
+  size_t desc_write = prefixed_wstring_write(file, &self->description);
+  VALIDATE_READ(desc_write > 0, (void)0);
 
-  size_t desc_write = prefixed_wstring_write_to_file(file, &self->description);
-  if (desc_write == 0) return 0;
-  write_count += desc_write;
+  if (!safe_size_add(total_size, desc_write, &total_size)) {
+    return 0;
+  }
 
-  return write_count;
+  return total_size;
 }
 
-size_t
-item_free(struct item *self) {
-  if (!self) return 0;
-  prefixed_wstring_free(&self->unknown1);
-  prefixed_wstring_free(&self->unknown2);
-  prefixed_wstring_free(&self->unknown3);
-  prefixed_wstring_free(&self->unknown4);
-  prefixed_wstring_free(&self->unknown5);
-  prefixed_wstring_free(&self->unknown6);
+void
+item_free(struct item* self) {
+  if (!self)
+    return;
+  prefixed_wstring_free(&self->icon);
+  item_free_resources(&self->resources);
   prefixed_wstring_free(&self->name);
   prefixed_wstring_free(&self->description);
   free(self);
-  return 0;
 }
 
 size_t
-item_hash(struct item const *self) {
-  if (!self) return 0;
+item_hash(struct item const* self) {
+  if (!self)
+    return 0;
   size_t h = self->id;
-  h += prefixed_wstring_hash(&self->unknown1);
-  h += prefixed_wstring_hash(&self->unknown2);
-  h += prefixed_wstring_hash(&self->unknown3);
-  h += prefixed_wstring_hash(&self->unknown4);
-  h += prefixed_wstring_hash(&self->unknown5);
-  h += prefixed_wstring_hash(&self->unknown6);
-  for (int i = 0; i < 5; i++) {
-    h += self->flags[i];
-  }
+  h += prefixed_wstring_hash(&self->icon);
+  h += item_resources_hash(&self->resources);
+
   h += prefixed_wstring_hash(&self->name);
   h += prefixed_wstring_hash(&self->description);
   return h;
 }
 
 size_t
-item_size(struct item const *self) {
-  if (!self) return 0;
-  return sizeof(self->id)
-       + prefixed_wstring_size(&self->unknown1)
-       + prefixed_wstring_size(&self->unknown2)
-       + prefixed_wstring_size(&self->unknown3)
-       + prefixed_wstring_size(&self->unknown4)
-       + prefixed_wstring_size(&self->unknown5)
-       + prefixed_wstring_size(&self->unknown6)
-       + sizeof(self->flags)
-       + prefixed_wstring_size(&self->name)
-       + prefixed_wstring_size(&self->description);
+item_size(struct item const* self) {
+  if (!self) {
+    return 0;
+  }
+
+  return
+    sizeof(self->id)
+    + prefixed_wstring_size(&self->icon)
+    + item_resources_size(&self->resources)
+    + prefixed_wstring_size(&self->name)
+    + prefixed_wstring_size(&self->description);
 }
 
 size_t
-item_print(struct item const *self) {
-  if (!self) return 0;
-  printf("Item ID: %u\n", self->id);
-  return 0;
-}
+item_print(struct item const* self) {
+  if (!self) {
+    return 0;
+  }
+  
+  printf("ID: %u\n", self->id);
+  printf("Icon: %ls\n", self->icon.length > 1 ? self->icon.value : L"(None)");
 
-size_t
-item_compare(struct item const *a, struct item const *b) {
-  if (a == b) return 1;
-  if (!a || !b) return 0;
-  if (a->id != b->id) return 0;
-  return 1;
-}
+  for (size_t i = 0; i < ITEM_RESOURCE_COUNT; i++) {
+    printf(" - Resource %zu: %ls (flag: %u)\n",
+           i + 1,
+           self->resources.values[i].length > 1
+            ? self->resources.values[i].value
+            : L"(None)",
+           self->resources.flags[i]);
+  }
 
-size_t
-item_copy(struct item *dest, struct item const *src) {
-  if (!dest || !src) return 0;
-  return 0;
+  printf("Name: %ls\n", self->name.length > 1 ? self->name.value : L"(None)");
+  printf("Description: \"%ls\"\n\n",
+         self->description.length > 1 ? self->description.value : L"(None)");
 }
-

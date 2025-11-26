@@ -1,19 +1,24 @@
 #include "prefixed_string.h"
+#include "common.h"
 #include <string.h>
 #include <stdlib.h>
 #include <wchar.h>
 
 size_t
-prefixed_string_write_to_file(FILE *file, struct prefixed_string const *self) {
+prefixed_string_write(FILE *file, struct prefixed_string const *self) {
   if (!self) {
     return 0;
   }
 
-  size_t write_count = 0;
+  size_t total_size = 0;
 
-  write_count = fwrite(&self->length, sizeof(self->length), 1, file);
+  size_t write_count = fwrite(&self->length, sizeof(self->length), 1, file);
 
   if (write_count != 1) {
+    return 0;
+  }
+
+  if (!safe_size_add(total_size, sizeof(self->length), &total_size)) {
     return 0;
   }
 
@@ -24,23 +29,29 @@ prefixed_string_write_to_file(FILE *file, struct prefixed_string const *self) {
       return 0;
     }
 
-    write_count += value_write;
+    if (!safe_size_add(total_size, self->length * sizeof(self->value[0]), &total_size)) {
+      return 0;
+    }
   }
 
-  return write_count;
+  return total_size;
 }
 
 size_t
-prefixed_wstring_write_to_file(FILE *file, struct prefixed_wstring const *self) {
+prefixed_wstring_write(FILE *file, struct prefixed_wstring const *self) {
   if (!self) {
     return 0;
   }
 
-  size_t write_count = 0;
+  size_t total_size = 0;
 
-  write_count = fwrite(&self->length, sizeof(self->length), 1, file);
+  size_t write_count = fwrite(&self->length, sizeof(self->length), 1, file);
 
   if (write_count != 1) {
+    return 0;
+  }
+
+  if (!safe_size_add(total_size, sizeof(self->length), &total_size)) {
     return 0;
   }
 
@@ -51,14 +62,16 @@ prefixed_wstring_write_to_file(FILE *file, struct prefixed_wstring const *self) 
       return 0;
     }
 
-    write_count += value_write;
+    if (!safe_size_add(total_size, self->length * sizeof(self->value[0]), &total_size)) {
+      return 0;
+    }
   }
 
-  return write_count;
+  return total_size;
 }
 
 size_t
-prefixed_string_skip_in_file(FILE *file) {
+prefixed_string_skip(FILE *file) {
   uint16_t length = 0;
   size_t   read_count =
     fread(&length, sizeof(length), 1, file);
@@ -77,7 +90,7 @@ prefixed_string_skip_in_file(FILE *file) {
 }
 
 size_t
-prefixed_wstring_skip_in_file(FILE *file) {
+prefixed_wstring_skip(FILE *file) {
   uint16_t length = 0;
   size_t   read_count =
     fread(&length, sizeof(length), 1, file);
@@ -146,7 +159,7 @@ prefixed_wstring_copy(struct prefixed_wstring *dest,
 }
 
 size_t
-prefixed_string_read_from_file(FILE *file, struct prefixed_string *self) {
+prefixed_string_read(FILE *file, struct prefixed_string *self) {
   size_t read_count = 0;
   *self = (struct prefixed_string) { 0 };
 
@@ -178,7 +191,7 @@ prefixed_string_read_from_file(FILE *file, struct prefixed_string *self) {
 }
 
 size_t
-prefixed_wstring_read_from_file(FILE *file, struct prefixed_wstring *self) {
+prefixed_wstring_read(FILE *file, struct prefixed_wstring *self) {
   size_t read_count = 0;
   *self = (struct prefixed_wstring) { 0 };
 
@@ -309,27 +322,12 @@ prefixed_wstring_hash(const struct prefixed_wstring* str) {
   return hash;
 }
 
-size_t
-prefixed_string_print(const struct prefixed_string const *self) {
+void
+prefixed_wstring_print(struct prefixed_wstring const *self) {
   if (!self || !self->value) {
     printf("(null)");
-    return 0;
+    return;
   }
 
-  printf("%s", self->value);
-  return (size_t) self->length;
-}
-
-size_t
-prefixed_wstring_print(const struct prefixed_wstring const *self) {
-  if (!self || !self->value) {
-    printf("(null)");
-    return 0;
-  }
-
-  for (uint16_t i = 0; i < self->length; ++i) {
-    printf("%lc", (wint_t) self->value[i]);
-  }
-
-  return (size_t) self->length;
+  printf("%ls", (wint_t *) self->value);
 }

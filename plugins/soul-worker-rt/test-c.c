@@ -1,4 +1,12 @@
-#include "soul_worker_rt_private.h"
+#include <inttypes.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <direct.h>
+#include <io.h>
+#include <fcntl.h>
+#include <errno.h>
 
 #include "table.h"
 #include "achievement.h"
@@ -19,14 +27,6 @@
 #include "title.h"
 #include "tooltip.h"
 #include "ui.h"
-
-#include <inttypes.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <direct.h>
-#include <errno.h>
 
 #ifdef _WIN32
 #define chdir _chdir
@@ -131,7 +131,7 @@ test_table_file(const char* table_name, enum table_type type) {
   }
 
   if (table_file) {
-    table = table_read_from_file(table_file, type);
+    table = table_read(table_file, type);
     fclose(table_file);
   } else {
     table = NULL;
@@ -149,28 +149,49 @@ test_table_file(const char* table_name, enum table_type type) {
 
 int
 main(int argc, char* argv[]) {
-  print_table_header();
+  // print_table_header();
 
-  test_table_file(ACHIEVEMENTS_TABLE, table_type_achievement);
-  test_table_file(BOOSTER_TABLE,      table_type_booster);
-  test_table_file(BUFF_TABLE,         table_type_buff);
-  test_table_file(CINEMA_TABLE,       table_type_cinema);
-  test_table_file(CUTSCENE_TABLE,     table_type_cutscene);
-  test_table_file(ITEM_TABLE,         table_type_item);
-  test_table_file(LEAGUE_SKILL_TABLE, table_type_league_skill);
-  test_table_file(MONSTER_TABLE,      table_type_monster);
-  test_table_file(NPC_TABLE,          table_type_npc);
-  test_table_file(QUEST_TABLE,        table_type_quest);
-  test_table_file(SHOP_TABLE,         table_type_shop);
-  test_table_file(SKILL_TABLE,        table_type_skill);
-  test_table_file(SOUL_METRY_TABLE,   table_type_soul_metry);
-  test_table_file(SPEECH_TABLE,       table_type_speech);
-  test_table_file(SYSTEM_MAIL_TABLE,  table_type_system_mail);
-  test_table_file(TITLE_TABLE,        table_type_title);
-  test_table_file(TOOLTIP_TABLE,      table_type_tooltip);
-  test_table_file(UI_TABLE,           table_type_ui);
+  // test_table_file(ACHIEVEMENTS_TABLE, table_type_achievement);
+  // test_table_file(BOOSTER_TABLE,      table_type_booster);
+  // test_table_file(BUFF_TABLE,         table_type_buff);
+  // test_table_file(CINEMA_TABLE,       table_type_cinema);
+  // test_table_file(CUTSCENE_TABLE,     table_type_cutscene);
+  // test_table_file(ITEM_TABLE,         table_type_item);
+  // test_table_file(LEAGUE_SKILL_TABLE, table_type_league_skill);
+  // test_table_file(MONSTER_TABLE,      table_type_monster);
+  // test_table_file(NPC_TABLE,          table_type_npc);
+  // test_table_file(QUEST_TABLE,        table_type_quest);
+  // test_table_file(SHOP_TABLE,         table_type_shop);
+  // test_table_file(SKILL_TABLE,        table_type_skill);
+  // test_table_file(SOUL_METRY_TABLE,   table_type_soul_metry);
+  // test_table_file(SPEECH_TABLE,       table_type_speech);
+  // test_table_file(SYSTEM_MAIL_TABLE,  table_type_system_mail);
+  // test_table_file(TITLE_TABLE,        table_type_title);
+  // test_table_file(TOOLTIP_TABLE,      table_type_tooltip);
+  // test_table_file(UI_TABLE,           table_type_ui);
 
-  print_table_footer();
+  // print_table_footer();
+
+  FILE *ui_file
+    = fopen(TABLE_PATH_PREFIX UI_TABLE, "rb");
+
+  if (ui_file) {
+    struct table *ui_table
+      = table_read(
+          ui_file,
+          table_type_ui);
+    if (ui_table) {
+      for (uint32_t i = 0; i < ui_table->count; i++) {
+        struct ui *ui = ui_table->items[i];
+
+        // if (ui->unknown1 != 0)
+          ui_print(ui);
+      }
+    }
+
+    table_free(ui_table);
+    fclose(ui_file);
+  }
 
   return 0;
 }

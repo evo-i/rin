@@ -20,10 +20,10 @@ struct achievement *
 achievement_new(void);
 
 size_t
-achievement_read_from_file(FILE *file, struct achievement *self);
+achievement_read(FILE *file, struct achievement *self);
 
 size_t
-achievement_write_to_file(FILE *file, struct achievement const *self);
+achievement_write(FILE *file, struct achievement const *self);
 
 void
 achievement_free(struct achievement *self);
@@ -32,18 +32,10 @@ void
 achievement_print(struct achievement const *self);
 
 size_t
-achievement_compare(struct achievement const *a,
-                    struct achievement const *b);
-
-size_t
 achievement_hash(struct achievement const *self);
 
 size_t
 achievement_size(struct achievement const *self);
-
-size_t
-achievement_copy(struct achievement *dest,
-                 struct achievement const *src);
 
 #ifdef __cplusplus
 }

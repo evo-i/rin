@@ -1,4 +1,5 @@
 #include "booster.h"
+#include "common.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -19,78 +20,94 @@ booster_new(void) {
 }
 
 size_t
-booster_read_from_file(FILE *file, struct booster *self) {
-  size_t read_count = 0;
+booster_read(FILE *file, struct booster *self) {
+  VALIDATE_PTR(file);
+  VALIDATE_PTR(self);
 
-  read_count = fread(&self->id, sizeof(self->id), 1, file);
-  if (read_count != 1) {
+  size_t total_size = 0;
+
+  size_t read_count = fread(&self->id, sizeof(self->id), 1, file);
+  VALIDATE_READ(read_count == 1, (void)0);
+
+  if (!safe_size_add(total_size, sizeof(self->id), &total_size)) {
     return 0;
   }
 
-  size_t name_read = prefixed_wstring_read_from_file(file, &self->name);
-  if (name_read == 0) {
-    return 0;
-  }
+  size_t name_read = prefixed_wstring_read(file, &self->name);
+  VALIDATE_READ(name_read > 0, (void)0);
 
-  size_t desc_read = prefixed_wstring_read_from_file(file, &self->description);
-  if (desc_read == 0) {
+  if (!safe_size_add(total_size, name_read, &total_size)) {
     prefixed_wstring_free(&self->name);
     return 0;
   }
 
-  size_t icon_read = prefixed_wstring_read_from_file(file, &self->icon);
-  if (icon_read == 0) {
+  size_t desc_read = prefixed_wstring_read(file, &self->description);
+  VALIDATE_READ(desc_read > 0, prefixed_wstring_free(&self->name));
+
+  if (!safe_size_add(total_size, desc_read, &total_size)) {
     prefixed_wstring_free(&self->name);
     prefixed_wstring_free(&self->description);
     return 0;
   }
 
-  return
-    sizeof(self->id)
-      + name_read
-      + desc_read
-      + icon_read;
+  size_t icon_read = prefixed_wstring_read(file, &self->icon);
+  VALIDATE_READ(icon_read > 0, {
+    prefixed_wstring_free(&self->name);
+    prefixed_wstring_free(&self->description);
+  });
+
+  if (!safe_size_add(total_size, icon_read, &total_size)) {
+    prefixed_wstring_free(&self->name);
+    prefixed_wstring_free(&self->description);
+    prefixed_wstring_free(&self->icon);
+    return 0;
+  }
+
+  return total_size;
 }
 
 size_t
-booster_write_to_file(FILE *file, struct booster const *self) {
-  size_t write_count = 0;
+booster_write(FILE *file, struct booster const *self) {
+  VALIDATE_PTR(file);
+  VALIDATE_PTR(self);
+
+  size_t total_size = 0;
 
   size_t id_write = fwrite(&self->id, sizeof(self->id), 1, file);
-  if (id_write != 1) {
+  VALIDATE_READ(id_write == 1, (void)0);
+
+  if (!safe_size_add(total_size, sizeof(self->id), &total_size)) {
     return 0;
   }
 
-  write_count += id_write;
+  size_t name_write = prefixed_wstring_write(file, &self->name);
+  VALIDATE_READ(name_write > 0, (void)0);
 
-  size_t name_write = prefixed_wstring_write_to_file(file, &self->name);
-  if (name_write == 0) {
+  if (!safe_size_add(total_size, name_write, &total_size)) {
     return 0;
   }
 
-  write_count += name_write;
+  size_t desc_write = prefixed_wstring_write(file, &self->description);
+  VALIDATE_READ(desc_write > 0, (void)0);
 
-  size_t desc_write = prefixed_wstring_write_to_file(file, &self->description);
-  if (desc_write == 0) {
+  if (!safe_size_add(total_size, desc_write, &total_size)) {
     return 0;
   }
 
-  write_count += desc_write;
+  size_t icon_write = prefixed_wstring_write(file, &self->icon);
+  VALIDATE_READ(icon_write > 0, (void)0);
 
-  size_t icon_write = prefixed_wstring_write_to_file(file, &self->icon);
-  if (icon_write == 0) {
+  if (!safe_size_add(total_size, icon_write, &total_size)) {
     return 0;
   }
 
-  write_count += icon_write;
-
-  return write_count;
+  return total_size;
 }
 
-size_t
+void
 booster_free(struct booster *self) {
   if (!self) {
-    return 0;
+    return;
   }
 
   prefixed_wstring_free(&self->name);
@@ -98,13 +115,12 @@ booster_free(struct booster *self) {
   prefixed_wstring_free(&self->icon);
 
   free(self);
-  return 0;
 }
 
-size_t
+void
 booster_print(struct booster const *self) {
   if (!self) {
-    return 0;
+    return;
   }
 
   printf("Booster ID: %" PRIu16 "\n", self->id);
@@ -115,38 +131,6 @@ booster_print(struct booster const *self) {
   printf("\nIcon: ");
   prefixed_wstring_print(&self->icon);
   printf("\n");
-
-  return 0;
-}
-
-size_t
-booster_compare(struct booster const *a,
-                struct booster const *b) {
-  if (a == b) {
-    return 1;
-  }
-
-  if (!a || !b) {
-    return 0;
-  }
-
-  if (a->id != b->id) {
-    return 0;
-  }
-
-  if (!prefixed_wstring_compare(&a->name, &b->name)) {
-    return 0;
-  }
-
-  if (!prefixed_wstring_compare(&a->description, &b->description)) {
-    return 0;
-  }
-
-  if (!prefixed_wstring_compare(&a->icon, &b->icon)) {
-    return 0;
-  }
-
-  return 1;
 }
 
 size_t
@@ -176,37 +160,4 @@ booster_size(struct booster const *self) {
       + prefixed_wstring_size(&self->name)
       + prefixed_wstring_size(&self->description)
       + prefixed_wstring_size(&self->icon);
-}
-
-size_t
-booster_copy(struct booster *dest,
-             struct booster const *src) {
-  if (!dest || !src) {
-    return 0;
-  }
-
-  dest->id = src->id;
-  dest->name.length = 0;
-  dest->name.value = NULL;
-  dest->description.length = 0;
-  dest->description.value = NULL;
-  dest->icon.length = 0;
-  dest->icon.value = NULL;
-
-  if (prefixed_wstring_copy(&dest->name, &src->name) == 0) {
-    return 0;
-  }
-
-  if (prefixed_wstring_copy(&dest->description, &src->description) == 0) {
-    prefixed_wstring_free(&dest->name);
-    return 0;
-  }
-
-  if (prefixed_wstring_copy(&dest->icon, &src->icon) == 0) {
-    prefixed_wstring_free(&dest->name);
-    prefixed_wstring_free(&dest->description);
-    return 0;
-  }
-
-  return booster_size(dest);
 }

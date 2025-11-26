@@ -17,7 +17,7 @@ struct skill {
   struct prefixed_wstring icon;
   uint32_t                unknown1;
   uint32_t                unknown2;
-  struct prefixed_wstring unknown3;
+  struct prefixed_wstring description_image;
   struct prefixed_wstring movie;
 };
 
@@ -25,16 +25,22 @@ struct skill *
 skill_new(void);
 
 size_t
-skill_read_from_file(FILE *file, struct skill *self);
+skill_read(FILE *file, struct skill *self);
 
 size_t
-skill_write_to_file(FILE *file, struct skill const *self);
+skill_write(FILE *file, struct skill const *self);
 
-size_t
+void
 skill_free(struct skill *self);
 
 size_t
 skill_hash(struct skill const *self);
+
+void
+skill_print(struct skill const *self);
+
+size_t
+skill_size(struct skill const *self);
 
 #ifdef __cplusplus
 }

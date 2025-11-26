@@ -1,4 +1,5 @@
 #include "table.h"
+#include "common.h"
 #include "achievement.h"
 #include "booster.h"
 #include "buff.h"
@@ -17,12 +18,188 @@
 #include "title.h"
 #include "tooltip.h"
 #include "ui.h"
+#include "md5.h"
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "md5.h"
 
-typedef size_t (*cb_item_hash_func)(void const *item);
+#define IS_VALID_TABLE_TYPE(type, arr) \
+  ((type) != table_type_unknown && (type) < ARRAY_SIZE(arr) && (arr)[(type)] != NULL)
+
+typedef size_t  (*item_read_t)  (FILE *file, void *item);
+typedef size_t  (*item_write_t) (FILE *file, void const *item);
+typedef size_t  (*item_size_t)  (void const *item);
+typedef size_t  (*item_hash_t)  (void const *item);
+typedef void    (*item_free_t)  (void *item);
+
+static struct {
+  size_t item_size;
+  item_read_t read_func;
+} item_read_info[] = {
+  [table_type_none] = {
+    0, NULL
+  },
+  [table_type_achievement] = {
+    sizeof(struct achievement),
+    (item_read_t) achievement_read
+  },
+  [table_type_booster] = {
+    sizeof(struct booster),
+    (item_read_t) booster_read
+  },
+  [table_type_buff] = {
+    sizeof(struct buff),
+    (item_read_t) buff_read
+  },
+  [table_type_cinema] = {
+    sizeof(struct cinema),
+    (item_read_t) cinema_read
+  },
+  [table_type_cutscene] = {
+    sizeof(struct cutscene),
+    (item_read_t) cutscene_read
+  },
+  [table_type_item] = {
+    sizeof(struct item),
+    (item_read_t) item_read
+  },
+  [table_type_league_skill] = {
+    sizeof(struct league_skill),
+    (item_read_t) league_skill_read
+  },
+  [table_type_monster] = {
+    sizeof(struct monster),
+    (item_read_t) monster_read
+  },
+  [table_type_npc] = {
+    sizeof(struct npc),
+    (item_read_t) npc_read
+  },
+  [table_type_quest] = {
+    sizeof(struct quest),
+    (item_read_t) quest_read
+  },
+  [table_type_shop] = {
+    sizeof(struct shop),
+    (item_read_t) shop_read
+  },
+  [table_type_skill] = {
+    sizeof(struct skill),
+    (item_read_t) skill_read
+  },
+  [table_type_soul_metry] = {
+    sizeof(struct soul_metry),
+    (item_read_t) soul_metry_read
+  },
+  [table_type_speech] = {
+    sizeof(struct speech),
+    (item_read_t) speech_read
+  },
+  [table_type_system_mail] = {
+    sizeof(struct system_mail),
+    (item_read_t) system_mail_read
+  },
+  [table_type_title] = {
+    sizeof(struct title),
+    (item_read_t) title_read
+  },
+  [table_type_tooltip] = {
+    sizeof(struct tooltip),
+    (item_read_t) tooltip_read
+  },
+  [table_type_ui] = {
+    sizeof(struct ui),
+    (item_read_t) ui_read
+  }
+};
+
+static item_write_t item_write_cb[] = {
+  [table_type_none]         = NULL,
+  [table_type_achievement]  = (item_write_t) achievement_write,
+  [table_type_booster]      = (item_write_t) booster_write,
+  [table_type_buff]         = (item_write_t) buff_write,
+  [table_type_cinema]       = (item_write_t) cinema_write,
+  [table_type_cutscene]     = (item_write_t) cutscene_write,
+  [table_type_item]         = (item_write_t) item_write,
+  [table_type_league_skill] = (item_write_t) league_skill_write,
+  [table_type_monster]      = (item_write_t) monster_write,
+  [table_type_npc]          = (item_write_t) npc_write,
+  [table_type_quest]        = (item_write_t) quest_write,
+  [table_type_shop]         = (item_write_t) shop_write,
+  [table_type_skill]        = (item_write_t) skill_write,
+  [table_type_soul_metry]   = (item_write_t) soul_metry_write,
+  [table_type_speech]       = (item_write_t) speech_write,
+  [table_type_system_mail]  = (item_write_t) system_mail_write,
+  [table_type_title]        = (item_write_t) title_write,
+  [table_type_tooltip]      = (item_write_t) tooltip_write,
+  [table_type_ui]           = (item_write_t) ui_write
+};
+
+static item_size_t item_size_cb[] = {
+  [table_type_none]         = NULL,
+  [table_type_achievement]  = (item_size_t) achievement_size,
+  [table_type_booster]      = (item_size_t) booster_size,
+  [table_type_buff]         = (item_size_t) buff_size,
+  [table_type_cinema]       = (item_size_t) cinema_size,
+  [table_type_cutscene]     = (item_size_t) cutscene_size,
+  [table_type_item]         = (item_size_t) item_size,
+  [table_type_league_skill] = (item_size_t) league_skill_size,
+  [table_type_monster]      = (item_size_t) monster_size,
+  [table_type_npc]          = (item_size_t) npc_size,
+  [table_type_quest]        = (item_size_t) quest_size,
+  [table_type_shop]         = (item_size_t) shop_size,
+  [table_type_skill]        = (item_size_t) skill_size,
+  [table_type_soul_metry]   = (item_size_t) soul_metry_size,
+  [table_type_speech]       = (item_size_t) speech_size,
+  [table_type_system_mail]  = (item_size_t) system_mail_size,
+  [table_type_title]        = (item_size_t) title_size,
+  [table_type_tooltip]      = (item_size_t) tooltip_size,
+  [table_type_ui]           = (item_size_t) ui_size
+};
+
+static item_hash_t item_hash_cb[] = {
+  [table_type_none]         = NULL,
+  [table_type_achievement]  = (item_hash_t) achievement_hash,
+  [table_type_booster]      = (item_hash_t) booster_hash,
+  [table_type_buff]         = (item_hash_t) buff_hash,
+  [table_type_cinema]       = (item_hash_t) cinema_hash,
+  [table_type_cutscene]     = (item_hash_t) cutscene_hash,
+  [table_type_item]         = (item_hash_t) item_hash,
+  [table_type_league_skill] = (item_hash_t) league_skill_hash,
+  [table_type_monster]      = (item_hash_t) monster_hash,
+  [table_type_npc]          = (item_hash_t) npc_hash,
+  [table_type_quest]        = (item_hash_t) quest_hash,
+  [table_type_shop]         = (item_hash_t) shop_hash,
+  [table_type_skill]        = (item_hash_t) skill_hash,
+  [table_type_soul_metry]   = (item_hash_t) soul_metry_hash,
+  [table_type_speech]       = (item_hash_t) speech_hash,
+  [table_type_system_mail]  = (item_hash_t) system_mail_hash,
+  [table_type_title]        = (item_hash_t) title_hash,
+  [table_type_tooltip]      = (item_hash_t) tooltip_hash,
+  [table_type_ui]           = (item_hash_t) ui_hash
+};
+
+static item_free_t item_free_cb[] = {
+  [table_type_none]         = NULL,
+  [table_type_achievement]  = (item_free_t) achievement_free,
+  [table_type_booster]      = (item_free_t) booster_free,
+  [table_type_buff]         = (item_free_t) buff_free,
+  [table_type_cinema]       = (item_free_t) cinema_free,
+  [table_type_cutscene]     = (item_free_t) cutscene_free,
+  [table_type_item]         = (item_free_t) item_free,
+  [table_type_league_skill] = (item_free_t) league_skill_free,
+  [table_type_monster]      = (item_free_t) monster_free,
+  [table_type_npc]          = (item_free_t) npc_free,
+  [table_type_quest]        = (item_free_t) quest_free,
+  [table_type_shop]         = (item_free_t) shop_free,
+  [table_type_skill]        = (item_free_t) skill_free,
+  [table_type_soul_metry]   = (item_free_t) soul_metry_free,
+  [table_type_speech]       = (item_free_t) speech_free,
+  [table_type_system_mail]  = (item_free_t) system_mail_free,
+  [table_type_title]        = (item_free_t) title_free,
+  [table_type_tooltip]      = (item_free_t) tooltip_free,
+  [table_type_ui]           = (item_free_t) ui_free
+};
 
 static
 size_t
@@ -33,21 +210,19 @@ table_read_count(FILE *file, uint32_t *count) {
 static
 int
 table_read_hash(FILE *file, struct prefixed_string *hash) {
-  return prefixed_string_read_from_file(file, hash);
+  return prefixed_string_read(file, hash);
 }
 
 static
 void **
-achievements_read_items(FILE *file, uint32_t count) {
-  struct achievement **items
-    = malloc(count * sizeof(struct achievement *));
-
+read_items_generic(FILE *file, uint32_t count, size_t item_size, item_read_t read_func) {
+  void **items = malloc(count * sizeof(void *));
   if (!items) {
     return NULL;
   }
 
   for (uint32_t i = 0; i < count; i++) {
-    items[i] = malloc(sizeof(struct achievement));
+    items[i] = malloc(item_size);
     if (!items[i]) {
       for (uint32_t j = 0; j < i; j++) {
         free(items[j]);
@@ -56,7 +231,7 @@ achievements_read_items(FILE *file, uint32_t count) {
       return NULL;
     }
 
-    if (achievement_read_from_file(file, items[i]) == 0) {
+    if (read_func(file, items[i]) == 0) {
       free(items[i]);
       for (uint32_t j = 0; j < i; j++) {
         free(items[j]);
@@ -66,538 +241,11 @@ achievements_read_items(FILE *file, uint32_t count) {
     }
   }
 
-  return (void **) items;
-}
-
-static
-void **
-boosters_read_items(FILE *file, uint32_t count) {
-  struct booster **items = malloc(count * sizeof(struct booster *));
-  if (!items) {
-    return NULL;
-  }
-
-  for (uint32_t i = 0; i < count; i++) {
-    items[i] = malloc(sizeof(struct booster));
-    if (!items[i]) {
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-
-    if (booster_read_from_file(file, items[i]) == 0) {
-      free(items[i]);
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-  }
-
-  return (void **) items;
-}
-
-static
-void **
-buffs_read_items(FILE *file, uint32_t count) {
-  struct buff **items = malloc(count * sizeof(struct buff *));
-  if (!items) {
-    return NULL;
-  }
-
-  for (uint32_t i = 0; i < count; i++) {
-    items[i] = malloc(sizeof(struct buff));
-    if (!items[i]) {
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-
-    if (buff_read_from_file(file, items[i]) == 0) {
-      free(items[i]);
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-  }
-
-  return (void **) items;
-}
-
-static
-void **
-cinemas_read_items(FILE *file, uint32_t count) {
-  struct cinema **items = malloc(count * sizeof(struct cinema *));
-  if (!items) {
-    return NULL;
-  }
-
-  for (uint32_t i = 0; i < count; i++) {
-    items[i] = malloc(sizeof(struct cinema));
-    if (!items[i]) {
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-
-    if (cinema_read_from_file(file, items[i]) == 0) {
-      free(items[i]);
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-  }
-
-  return (void **) items;
-}
-
-static
-void **
-cutscenes_read_items(FILE *file, uint32_t count) {
-  struct cutscene **items = malloc(count * sizeof(struct cutscene *));
-  if (!items) {
-    return NULL;
-  }
-
-  for (uint32_t i = 0; i < count; i++) {
-    items[i] = malloc(sizeof(struct cutscene));
-    if (!items[i]) {
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-
-    if (cutscene_read_from_file(file, items[i]) == 0) {
-      free(items[i]);
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-  }
-
-  return (void **) items;
-}
-
-static
-void **
-items_read_items(FILE *file, uint32_t count) {
-  struct item **items = malloc(count * sizeof(struct item *));
-  if (!items) {
-    return NULL;
-  }
-
-  for (uint32_t i = 0; i < count; i++) {
-    items[i] = malloc(sizeof(struct item));
-    if (!items[i]) {
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-
-    if (item_read_from_file(file, items[i]) == 0) {
-      free(items[i]);
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-  }
-
-  return (void **) items;
-}
-
-static
-void **
-league_skills_read_items(FILE *file, uint32_t count) {
-  struct league_skill **items = malloc(count * sizeof(struct league_skill *));
-  if (!items) {
-    return NULL;
-  }
-
-  for (uint32_t i = 0; i < count; i++) {
-    items[i] = malloc(sizeof(struct league_skill));
-    if (!items[i]) {
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-
-    if (league_skill_read_from_file(file, items[i]) == 0) {
-      free(items[i]);
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-  }
-
-  return (void **) items;
-}
-
-static
-void **
-monsters_read_items(FILE *file, uint32_t count) {
-  struct monster **items = malloc(count * sizeof(struct monster *));
-  if (!items) {
-    return NULL;
-  }
-
-  for (uint32_t i = 0; i < count; i++) {
-    items[i] = malloc(sizeof(struct monster));
-    if (!items[i]) {
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-
-    if (monster_read_from_file(file, items[i]) == 0) {
-      free(items[i]);
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-  }
-
-  return (void **) items;
-}
-
-static
-void **
-npcs_read_items(FILE *file, uint32_t count) {
-  struct npc **items = malloc(count * sizeof(struct npc *));
-  if (!items) {
-    return NULL;
-  }
-
-  for (uint32_t i = 0; i < count; i++) {
-    items[i] = malloc(sizeof(struct npc));
-    if (!items[i]) {
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-
-    if (npc_read_from_file(file, items[i]) == 0) {
-      free(items[i]);
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-  }
-
-  return (void **) items;
-}
-
-static
-void **
-quests_read_items(FILE *file, uint32_t count) {
-  struct quest **items = malloc(count * sizeof(struct quest *));
-  if (!items) {
-    return NULL;
-  }
-
-  for (uint32_t i = 0; i < count; i++) {
-    items[i] = malloc(sizeof(struct quest));
-    if (!items[i]) {
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-
-    if (quest_read_from_file(file, items[i]) == 0) {
-      free(items[i]);
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-  }
-
-  return (void **) items;
-}
-
-static
-void **
-shops_read_items(FILE *file, uint32_t count) {
-  struct shop **items = malloc(count * sizeof(struct shop *));
-  if (!items) {
-    return NULL;
-  }
-
-  for (uint32_t i = 0; i < count; i++) {
-    items[i] = malloc(sizeof(struct shop));
-    if (!items[i]) {
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-
-    if (shop_read_from_file(file, items[i]) == 0) {
-      free(items[i]);
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-  }
-
-  return (void **) items;
-}
-
-static
-void **
-skills_read_items(FILE *file, uint32_t count) {
-  struct skill **items = malloc(count * sizeof(struct skill *));
-  if (!items) {
-    return NULL;
-  }
-
-  for (uint32_t i = 0; i < count; i++) {
-    items[i] = malloc(sizeof(struct skill));
-    if (!items[i]) {
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-
-    if (skill_read_from_file(file, items[i]) == 0) {
-      free(items[i]);
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-  }
-
-  return (void **) items;
-}
-
-static
-void **
-soul_metries_read_items(FILE *file, uint32_t count) {
-  struct soul_metry **items = malloc(count * sizeof(struct soul_metry *));
-  if (!items) {
-    return NULL;
-  }
-
-  for (uint32_t i = 0; i < count; i++) {
-    items[i] = malloc(sizeof(struct soul_metry));
-    if (!items[i]) {
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-
-    if (soul_metry_read_from_file(file, items[i]) == 0) {
-      free(items[i]);
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-  }
-
-  return (void **) items;
-}
-
-static
-void **
-speeches_read_items(FILE *file, uint32_t count) {
-  struct speech **items = malloc(count * sizeof(struct speech *));
-  if (!items) {
-    return NULL;
-  }
-
-  for (uint32_t i = 0; i < count; i++) {
-    items[i] = malloc(sizeof(struct speech));
-    if (!items[i]) {
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-
-    if (speech_read_from_file(file, items[i]) == 0) {
-      free(items[i]);
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-  }
-
-  return (void **) items;
-}
-
-static
-void **
-system_mails_read_items(FILE *file, uint32_t count) {
-  struct system_mail **items = malloc(count * sizeof(struct system_mail *));
-  if (!items) {
-    return NULL;
-  }
-
-  for (uint32_t i = 0; i < count; i++) {
-    items[i] = malloc(sizeof(struct system_mail));
-    if (!items[i]) {
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-
-    if (system_mail_read_from_file(file, items[i]) == 0) {
-      free(items[i]);
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-  }
-
-  return (void **) items;
-}
-
-static
-void **
-titles_read_items(FILE *file, uint32_t count) {
-  struct title **items = malloc(count * sizeof(struct title *));
-  if (!items) {
-    return NULL;
-  }
-
-  for (uint32_t i = 0; i < count; i++) {
-    items[i] = malloc(sizeof(struct title));
-    if (!items[i]) {
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-
-    if (title_read_from_file(file, items[i]) == 0) {
-      free(items[i]);
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-  }
-
-  return (void **) items;
-}
-
-static
-void **
-tooltips_read_items(FILE *file, uint32_t count) {
-  struct tooltip **items = malloc(count * sizeof(struct tooltip *));
-  if (!items) {
-    return NULL;
-  }
-
-  for (uint32_t i = 0; i < count; i++) {
-    items[i] = malloc(sizeof(struct tooltip));
-    if (!items[i]) {
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-
-    if (tooltip_read_from_file(file, items[i]) == 0) {
-      free(items[i]);
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-  }
-
-  return (void **) items;
-}
-
-static
-void **
-uis_read_items(FILE *file, uint32_t count) {
-  struct ui **items = malloc(count * sizeof(struct ui *));
-  if (!items) {
-    return NULL;
-  }
-
-  for (uint32_t i = 0; i < count; i++) {
-    items[i] = malloc(sizeof(struct ui));
-    if (!items[i]) {
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-
-    if (ui_read_from_file(file, items[i]) == 0) {
-      free(items[i]);
-      for (uint32_t j = 0; j < i; j++) {
-        free(items[j]);
-      }
-      free(items);
-      return NULL;
-    }
-  }
-
-  return (void **) items;
+  return items;
 }
 
 struct table *
-table_read_from_file(FILE *file, enum table_type table_type) {
+table_read(FILE *file, enum table_type table_type) {
   struct table *table
     = calloc(1, sizeof(struct table));
 
@@ -612,66 +260,15 @@ table_read_from_file(FILE *file, enum table_type table_type) {
     return NULL;
   }
 
-  switch (table_type) {
-    case table_type_achievement: {
-      table->items = achievements_read_items(file, table->count);
-    } break;
-    case table_type_booster: {
-      table->items = boosters_read_items(file, table->count);
-    } break;
-    case table_type_buff: {
-      table->items = buffs_read_items(file, table->count);
-    } break;
-    case table_type_cinema: {
-      table->items = cinemas_read_items(file, table->count);
-    } break;
-    case table_type_cutscene: {
-      table->items = cutscenes_read_items(file, table->count);
-    } break;
-    case table_type_item: {
-      table->items = items_read_items(file, table->count);
-    } break;
-    case table_type_league_skill: {
-      table->items = league_skills_read_items(file, table->count);
-    } break;
-    case table_type_monster: {
-      table->items = monsters_read_items(file, table->count);
-    } break;
-    case table_type_npc: {
-      table->items = npcs_read_items(file, table->count);
-    } break;
-    case table_type_quest: {
-      table->items = quests_read_items(file, table->count);
-    } break;
-    case table_type_shop: {
-      table->items = shops_read_items(file, table->count);
-    } break;
-    case table_type_skill: {
-      table->items = skills_read_items(file, table->count);
-    } break;
-    case table_type_soul_metry: {
-      table->items = soul_metries_read_items(file, table->count);
-    } break;
-    case table_type_speech: {
-      table->items = speeches_read_items(file, table->count);
-    } break;
-    case table_type_system_mail: {
-      table->items = system_mails_read_items(file, table->count);
-    } break;
-    case table_type_title: {
-      table->items = titles_read_items(file, table->count);
-    } break;
-    case table_type_tooltip: {
-      table->items = tooltips_read_items(file, table->count);
-    } break;
-    case table_type_ui: {
-      table->items = uis_read_items(file, table->count);
-    } break;
-    default: {
-      table_free(table);
-      return NULL;
-    } break;
+  if (table_type >= ARRAY_SIZE(item_read_info)
+      || !item_read_info[table_type].read_func) {
+    table_free(table);
+    return NULL;
   }
+
+  table->items = read_items_generic(file, table->count, 
+                                    item_read_info[table_type].item_size,
+                                    item_read_info[table_type].read_func);
 
   if (!table->items) {
     table_free(table);
@@ -694,70 +291,11 @@ table_hash_num(struct table const *table) {
     return 0;
   }
 
-  cb_item_hash_func hash_func = NULL;
-
-  switch (table->type) {
-    case table_type_achievement:
-      hash_func = (cb_item_hash_func) achievement_hash;
-      break;
-    case table_type_booster:
-      hash_func = (cb_item_hash_func) booster_hash;
-      break;
-    case table_type_buff:
-      hash_func = (cb_item_hash_func) buff_hash;
-      break;
-    case table_type_cinema:
-      hash_func = (cb_item_hash_func) cinema_hash;
-      break;
-    case table_type_cutscene:
-      hash_func = (cb_item_hash_func) cutscene_hash;
-      break;
-    case table_type_item:
-      hash_func = (cb_item_hash_func) item_hash;
-      break;
-    case table_type_league_skill:
-      hash_func = (cb_item_hash_func) league_skill_hash;
-      break;
-    case table_type_monster:
-      hash_func = (cb_item_hash_func) monster_hash;
-      break;
-    case table_type_npc:
-      hash_func = (cb_item_hash_func) npc_hash;
-      break;
-    case table_type_quest:
-      hash_func = (cb_item_hash_func) quest_hash;
-      break;
-    case table_type_shop:
-      hash_func = (cb_item_hash_func) shop_hash;
-      break;
-    case table_type_skill:
-      hash_func = (cb_item_hash_func) skill_hash;
-      break;
-    case table_type_soul_metry:
-      hash_func = (cb_item_hash_func) soul_metry_hash;
-      break;
-    case table_type_speech:
-      hash_func = (cb_item_hash_func) speech_hash;
-      break;
-    case table_type_system_mail:
-      hash_func = (cb_item_hash_func) system_mail_hash;
-      break;
-    case table_type_title:
-      hash_func = (cb_item_hash_func) title_hash;
-      break;
-    case table_type_tooltip:
-      hash_func = (cb_item_hash_func) tooltip_hash;
-      break;
-    case table_type_ui:
-      hash_func = (cb_item_hash_func) ui_hash;
-      break;
-    default:
-      return 0;
-  }
-
-  if (!hash_func) {
+  if (!IS_VALID_TABLE_TYPE(table->type, item_hash_cb)) {
     return 0;
   }
+
+  item_hash_t hash_func = item_hash_cb[table->type];
 
   for (uint32_t i = 0; i < table->count; i++) {
     hash += hash_func(table->items[i]);
@@ -791,104 +329,81 @@ table_free(struct table *table) {
     return;
   }
 
-  if (table->items) {
-    switch (table->type) {
-      case table_type_achievement: {
-        for (uint32_t i = 0; i < table->count; i++) {
-          achievement_free(table->items[i]);
-        }
-      } break;
-      case table_type_booster: {
-        for (uint32_t i = 0; i < table->count; i++) {
-          booster_free(table->items[i]);
-        }
-      } break;
-      case table_type_buff: {
-        for (uint32_t i = 0; i < table->count; i++) {
-          buff_free(table->items[i]);
-        }
-      } break;
-      case table_type_cinema: {
-        for (uint32_t i = 0; i < table->count; i++) {
-          cinema_free(table->items[i]);
-        }
-      } break;
-      case table_type_cutscene: {
-        for (uint32_t i = 0; i < table->count; i++) {
-          cutscene_free(table->items[i]);
-        }
-      } break;
-      case table_type_item: {
-        for (uint32_t i = 0; i < table->count; i++) {
-          item_free(table->items[i]);
-        }
-      } break;
-      case table_type_league_skill: {
-        for (uint32_t i = 0; i < table->count; i++) {
-          league_skill_free(table->items[i]);
-        }
-      } break;
-      case table_type_monster: {
-        for (uint32_t i = 0; i < table->count; i++) {
-          monster_free(table->items[i]);
-        }
-      } break;
-      case table_type_npc: {
-        for (uint32_t i = 0; i < table->count; i++) {
-          npc_free(table->items[i]);
-        }
-      } break;
-      case table_type_quest: {
-        for (uint32_t i = 0; i < table->count; i++) {
-          quest_free(table->items[i]);
-        }
-      } break;
-      case table_type_shop: {
-        for (uint32_t i = 0; i < table->count; i++) {
-          shop_free(table->items[i]);
-        }
-      } break;
-      case table_type_skill: {
-        for (uint32_t i = 0; i < table->count; i++) {
-          skill_free(table->items[i]);
-        }
-      } break;
-      case table_type_soul_metry: {
-        for (uint32_t i = 0; i < table->count; i++) {
-          soul_metry_free(table->items[i]);
-        }
-      } break;
-      case table_type_speech: {
-        for (uint32_t i = 0; i < table->count; i++) {
-          speech_free(table->items[i]);
-        }
-      } break;
-      case table_type_system_mail: {
-        for (uint32_t i = 0; i < table->count; i++) {
-          system_mail_free(table->items[i]);
-        }
-      } break;
-      case table_type_title: {
-        for (uint32_t i = 0; i < table->count; i++) {
-          title_free(table->items[i]);
-        }
-      } break;
-      case table_type_tooltip: {
-        for (uint32_t i = 0; i < table->count; i++) {
-          tooltip_free(table->items[i]);
-        }
-      } break;
-      case table_type_ui: {
-        for (uint32_t i = 0; i < table->count; i++) {
-          ui_free(table->items[i]);
-        }
-      } break;
-      default:
-        break;
+  if (table->items && IS_VALID_TABLE_TYPE(table->type, item_free_cb)) {
+    item_free_t free_func = item_free_cb[table->type];
+    for (uint32_t i = 0; i < table->count; i++) {
+      free_func(table->items[i]);
     }
     free(table->items);
   }
 
   prefixed_string_free(&table->hash);
   free(table);
+}
+
+size_t
+table_write(FILE *file, struct table const *table) {
+  if (!table) {
+    return 0;
+  }
+
+  if (!IS_VALID_TABLE_TYPE(table->type, item_write_cb)) {
+    return 0;
+  }
+
+  size_t total_size = 0;
+  
+  size_t written = fwrite(&table->count, sizeof(table->count), 1, file);
+  if (written != 1) {
+    return 0;
+  }
+
+  if (!safe_size_add(total_size, sizeof(table->count), &total_size)) {
+    return 0;
+  }
+
+  item_write_t write_func = item_write_cb[table->type];
+  for (uint32_t i = 0; i < table->count; i++) {
+    size_t item_written = write_func(file, table->items[i]);
+    if (item_written == 0) {
+      return 0;
+    }
+    if (!safe_size_add(total_size, item_written, &total_size)) {
+      return 0;
+    }
+  }
+
+  size_t hash_written = prefixed_string_write(file, &table->hash);
+  if (hash_written == 0) {
+    return 0;
+  }
+
+  if (!safe_size_add(total_size, hash_written, &total_size)) {
+    return 0;
+  }
+
+  return total_size;
+}
+
+size_t
+table_size(struct table const *table) {
+  if (!table) {
+    return 0;
+  }
+
+  if (!IS_VALID_TABLE_TYPE(table->type, item_size_cb)) {
+    return 0;
+  }
+
+  size_t size = sizeof(table->count);
+  
+  item_size_t size_func = item_size_cb[table->type];
+
+  for (uint32_t i = 0; i < table->count; i++) {
+    size += size_func(table->items[i]);
+  }
+
+  size += prefixed_string_size(&table->hash);
+
+  return size;
 }

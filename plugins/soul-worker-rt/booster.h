@@ -20,30 +20,22 @@ struct booster *
 booster_new(void);
 
 size_t
-booster_read_from_file(FILE *file, struct booster *self);
+booster_read(FILE *file, struct booster *self);
 
 size_t
-booster_write_to_file(FILE *file, struct booster const *self);
+booster_write(FILE *file, struct booster const *self);
 
-size_t
+void
 booster_free(struct booster *self);
 
-size_t
+void
 booster_print(struct booster const *self);
-
-size_t
-booster_compare(struct booster const *a,
-                struct booster const *b);
 
 size_t
 booster_hash(struct booster const *self);
 
 size_t
 booster_size(struct booster const *self);
-
-size_t
-booster_copy(struct booster *dest,
-             struct booster const *src);
 
 #ifdef __cplusplus
 }

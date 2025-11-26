@@ -22,16 +22,19 @@ struct quest *
 quest_new(void);
 
 size_t
-quest_read_from_file(FILE *file, struct quest *self);
+quest_read(FILE *file, struct quest *self);
 
 size_t
-quest_write_to_file(FILE *file, struct quest const *self);
+quest_write(FILE *file, struct quest const *self);
 
-size_t
+void
 quest_free(struct quest *self);
 
 size_t
 quest_hash(struct quest const *self);
+
+size_t
+quest_size(struct quest const *self);
 
 #ifdef __cplusplus
 }

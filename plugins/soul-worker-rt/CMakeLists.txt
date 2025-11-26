@@ -1,8 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
-add_library(soul_worker_rt SHARED
+add_library(soul_worker_rt MODULE
   soul_worker_rt_plugin.c
-  soul_worker_rt_private.c
   prefixed_string.c
   md5.c
   achievement.c
@@ -36,12 +35,12 @@ set_target_properties(soul_worker_rt PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/plugins/soul-worker-rt
 )
 
-target_link_libraries(soul_worker_rt PRIVATE
-  advapi32
-)
+# target_link_libraries(soul_worker_rt PRIVATE
+#   advapi32
+# )
 
-add_executable(test_c test-c.c)
+# add_executable(test_c test-c.c)
 
-target_link_libraries(test_c PRIVATE soul_worker_rt
-  advapi32
-)
+# target_link_libraries(test_c PRIVATE soul_worker_rt
+#   advapi32
+# )

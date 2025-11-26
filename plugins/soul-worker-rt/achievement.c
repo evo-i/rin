@@ -1,4 +1,5 @@
 #include "achievement.h"
+#include "common.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -19,58 +20,69 @@ achievement_new(void) {
 }
 
 size_t
-achievement_read_from_file(FILE *file, struct achievement *self) {
-  size_t read_count = 0;
+achievement_read(FILE *file, struct achievement *self) {
+  VALIDATE_PTR(file);
+  VALIDATE_PTR(self);
 
-  read_count = fread(&self->id, sizeof(self->id), 1, file);
-  if (read_count != 1) {
+  size_t total_size = 0;
+  size_t temp_size = 0;
+
+  size_t read_count = fread(&self->id, sizeof(self->id), 1, file);
+  VALIDATE_READ(read_count == 1, (void)0);
+
+  if (!safe_size_add(total_size, sizeof(self->id), &total_size)) {
     return 0;
   }
 
-  size_t title_read = prefixed_wstring_read_from_file(file, &self->title);
-  if (title_read == 0) {
+  size_t title_read = prefixed_wstring_read(file, &self->title);
+  VALIDATE_READ(title_read > 0, (void)0);
+
+  if (!safe_size_add(total_size, title_read, &total_size)) {
+    prefixed_wstring_free(&self->title);
     return 0;
   }
 
-  size_t desc_read = prefixed_wstring_read_from_file(file, &self->description);
-  if (desc_read == 0) {
-    free(self->title.value);
-    memset(&self->title, 0, sizeof(self->title));
+  size_t desc_read = prefixed_wstring_read(file, &self->description);
+  VALIDATE_READ(desc_read > 0, prefixed_wstring_free(&self->title));
+
+  if (!safe_size_add(total_size, desc_read, &total_size)) {
+    prefixed_wstring_free(&self->title);
+    prefixed_wstring_free(&self->description);
     return 0;
   }
 
-  return
-    sizeof(self->id)
-      + title_read
-      + desc_read;
+  return total_size;
 }
 
 size_t
-achievement_write_to_file(FILE *file, struct achievement const *self) {
-  size_t write_count = 0;
+achievement_write(FILE *file, struct achievement const *self) {
+  VALIDATE_PTR(file);
+  VALIDATE_PTR(self);
+
+  size_t total_size = 0;
 
   size_t id_write = fwrite(&self->id, sizeof(self->id), 1, file);
-  if (id_write != 1) {
+  VALIDATE_READ(id_write == 1, (void)0);
+
+  if (!safe_size_add(total_size, sizeof(self->id), &total_size)) {
     return 0;
   }
 
-  write_count += id_write;
+  size_t title_write = prefixed_wstring_write(file, &self->title);
+  VALIDATE_READ(title_write > 0, (void)0);
 
-  size_t title_write = prefixed_wstring_write_to_file(file, &self->title);
-  if (title_write == 0) {
+  if (!safe_size_add(total_size, title_write, &total_size)) {
     return 0;
   }
 
-  write_count += title_write;
+  size_t desc_write = prefixed_wstring_write(file, &self->description);
+  VALIDATE_READ(desc_write > 0, (void)0);
 
-  size_t desc_write = prefixed_wstring_write_to_file(file, &self->description);
-  if (desc_write == 0) {
+  if (!safe_size_add(total_size, desc_write, &total_size)) {
     return 0;
   }
 
-  write_count += desc_write;
-
-  return write_count;
+  return total_size;
 }
 
 void
@@ -101,32 +113,6 @@ achievement_print(struct achievement const *self) {
 }
 
 size_t
-achievement_compare(struct achievement const *a,
-                    struct achievement const *b) {
-  if (a == b) {
-    return 1;
-  }
-
-  if (!a || !b) {
-    return 0;
-  }
-
-  if (a->id != b->id) {
-    return 0;
-  }
-
-  if (!prefixed_wstring_compare(&a->title, &b->title)) {
-    return 0;
-  }
-
-  if (!prefixed_wstring_compare(&a->description, &b->description)) {
-    return 0;
-  }
-
-  return 1;
-}
-
-size_t
 achievement_hash(struct achievement const *self) {
   if (!self) {
     return 0;
@@ -151,33 +137,4 @@ achievement_size(struct achievement const *self) {
     sizeof(self->id)
       + prefixed_wstring_size(&self->title)
       + prefixed_wstring_size(&self->description);
-}
-
-size_t
-achievement_copy(struct achievement *dest,
-                 struct achievement const *src) {
-  if (!dest || !src) {
-    return 0;
-  }
-
-  dest->id = src->id;
-  dest->title.length = 0;
-  dest->title.value = NULL;
-  dest->description.length = 0;
-  dest->description.value = NULL;
-
-  if (prefixed_wstring_copy(&dest->title, &src->title) == 0) {
-    dest->title.length = 0;
-    dest->title.value = NULL;
-    return 0;
-  }
-
-  if (prefixed_wstring_copy(&dest->description, &src->description) == 0) {
-    prefixed_wstring_free(&dest->title);
-    dest->description.length = 0;
-    dest->description.value = NULL;
-    return 0;
-  }
-
-  return achievement_size(dest);
 }

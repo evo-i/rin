@@ -41,10 +41,10 @@ struct table {
 };
 
 struct table *
-table_read_from_file(FILE *file, enum table_type table_type);
+table_read(FILE *file, enum table_type table_type);
 
 size_t
-table_write_to_file(FILE *file, struct table const *table);
+table_write(FILE *file, struct table const *table);
 
 size_t
 table_size(struct table const *table);

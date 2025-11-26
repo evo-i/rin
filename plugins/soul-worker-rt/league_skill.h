@@ -13,7 +13,7 @@ struct league_skill {
   uint16_t                id;
   struct prefixed_wstring icon;
   struct prefixed_wstring name;
-  struct prefixed_wstring unknown;
+  struct prefixed_wstring key;
   struct prefixed_wstring description;
   struct prefixed_wstring title;
 };
@@ -22,16 +22,22 @@ struct league_skill *
 league_skill_new(void);
 
 size_t
-league_skill_read_from_file(FILE *file, struct league_skill *self);
+league_skill_read(FILE *file, struct league_skill *self);
 
 size_t
-league_skill_write_to_file(FILE *file, struct league_skill const *self);
+league_skill_write(FILE *file, struct league_skill const *self);
 
-size_t
+void
 league_skill_free(struct league_skill *self);
 
 size_t
 league_skill_hash(struct league_skill const *self);
+
+void
+league_skill_print(struct league_skill const *self);
+
+size_t
+league_skill_size(struct league_skill const *self);
 
 #ifdef __cplusplus
 }

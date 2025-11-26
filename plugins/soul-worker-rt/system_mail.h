@@ -23,16 +23,19 @@ struct system_mail *
 system_mail_new(void);
 
 size_t
-system_mail_read_from_file(FILE *file, struct system_mail *self);
+system_mail_read(FILE *file, struct system_mail *self);
 
 size_t
-system_mail_write_to_file(FILE *file, struct system_mail const *self);
+system_mail_write(FILE *file, struct system_mail const *self);
 
-size_t
+void
 system_mail_free(struct system_mail *self);
 
 size_t
 system_mail_hash(struct system_mail const *self);
+
+size_t
+system_mail_size(struct system_mail const *self);
 
 void
 system_mail_print(struct system_mail const *self);

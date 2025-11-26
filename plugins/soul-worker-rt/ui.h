@@ -11,7 +11,7 @@ extern "C" {
 
 struct ui {
   uint32_t                id;
-  uint8_t                 has_format;
+  uint8_t                 unknown1;
   struct prefixed_wstring text;
 };
 
@@ -19,16 +19,22 @@ struct ui *
 ui_new(void);
 
 size_t
-ui_read_from_file(FILE *file, struct ui *self);
+ui_read(FILE *file, struct ui *self);
 
 size_t
-ui_write_to_file(FILE *file, struct ui const *self);
+ui_write(FILE *file, struct ui const *self);
 
-size_t
+void
 ui_free(struct ui *self);
 
 size_t
 ui_hash(struct ui const *self);
+
+void
+ui_print(struct ui const *self);
+
+size_t
+ui_size(struct ui const *self);
 
 #ifdef __cplusplus
 }

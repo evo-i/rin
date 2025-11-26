@@ -20,16 +20,19 @@ struct title *
 title_new(void);
 
 size_t
-title_read_from_file(FILE *file, struct title *self);
+title_read(FILE *file, struct title *self);
 
 size_t
-title_write_to_file(FILE *file, struct title const *self);
+title_write(FILE *file, struct title const *self);
 
-size_t
+void
 title_free(struct title *self);
 
 size_t
 title_hash(struct title const *self);
+
+size_t
+title_size(struct title const *self);
 
 #ifdef __cplusplus
 }

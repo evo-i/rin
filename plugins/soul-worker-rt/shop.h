@@ -18,16 +18,19 @@ struct shop *
 shop_new(void);
 
 size_t
-shop_read_from_file(FILE *file, struct shop *self);
+shop_read(FILE *file, struct shop *self);
 
 size_t
-shop_write_to_file(FILE *file, struct shop const *self);
+shop_write(FILE *file, struct shop const *self);
 
-size_t
+void
 shop_free(struct shop *self);
 
 size_t
 shop_hash(struct shop const *self);
+
+size_t
+shop_size(struct shop const *self);
 
 #ifdef __cplusplus
 }

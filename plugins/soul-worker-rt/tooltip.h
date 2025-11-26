@@ -19,16 +19,19 @@ struct tooltip *
 tooltip_new(void);
 
 size_t
-tooltip_read_from_file(FILE *file, struct tooltip *self);
+tooltip_read(FILE *file, struct tooltip *self);
 
 size_t
-tooltip_write_to_file(FILE *file, struct tooltip const *self);
+tooltip_write(FILE *file, struct tooltip const *self);
 
-size_t
+void
 tooltip_free(struct tooltip *self);
 
 size_t
 tooltip_hash(struct tooltip const *self);
+
+size_t
+tooltip_size(struct tooltip const *self);
 
 #ifdef __cplusplus
 }
